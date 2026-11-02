@@ -26,8 +26,11 @@
   const weekday = d => WEEKDAYS[(d - 1) % 7];
   const cur = () => SEASONS[S.season];
   const isFav = id => S.favs.includes(id);
-  const typeEmoji = { Grain: '🌾', Legume: '🫘', Root: '🥕', Vegetable: '🥬', Fruit: '🍓', Seed: '🌻' };
-  const fishEmoji = { 'Pez': '🐟', 'Molusco': '🦪', 'Medusa': '🪼', 'Decápodo': '🦐', 'Esponja': '🧽', 'Cefalópodo': '🦑' };
+  const ini = n => esc(String(n || '?').trim()[0] || '?');
+  const sw = id => `<i class="sw s-${id}" aria-hidden="true"></i>`;
+  const swatches = ids => ids.length === 4 ? '<span class="yr">Todo el año</span>' : ids.map(sw).join('');
+  const starIco = '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>';
+  const heartIco = '<svg class="heart" viewBox="0 0 24 24" aria-label="Romance"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>';
   const chev = '<svg class="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
   const searchIco = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>';
 
@@ -42,10 +45,10 @@
   };
   function avatar(v, lg) {
     const file = lg ? villagerPortraitFile(v) : villagerIconFile(v);
-    return `<div class="avatar ${lg ? 'lg ' : ''}clan-${v.clan.toLowerCase()}">${pic(file, v.name[0], lg ? villagerIconFile(v) : null)}${v.romance ? '<span class="heart">💗</span>' : ''}</div>`;
+    return `<div class="avatar ${lg ? 'lg ' : ''}clan-${v.clan.toLowerCase()}">${pic(file, v.name[0], lg ? villagerIconFile(v) : null)}${v.romance ? heartIco : ''}</div>`;
   }
-  const cropPic = c => pic(c.en + '.png', typeEmoji[c.type]);
-  const fishPic = f => pic(f.name + '.png', fishEmoji[f.kind]);
+  const cropPic = c => pic(c.en + '.png', ini(c.name));
+  const fishPic = f => pic(f.name + '.png', ini(f.name));
   const vChip = (v, cls) => `<a class="gift ${cls}" href="#/aldeano/${v.id}"><span class="gi round">${pic(villagerIconFile(v), '')}</span>${esc(v.name)}</a>`;
 
   function itemLabel(en) {
@@ -54,7 +57,7 @@
   }
   function seasonTags(ids) {
     if (ids.length === 4) return '<span class="tag moss">Todo el año</span>';
-    return ids.map(id => { const s = seasonById(id); return `<span class="tag ${id}">${s.emoji} ${s.name}</span>`; }).join('');
+    return ids.map(id => `<span class="tag ${id}">${seasonById(id).name}</span>`).join('');
   }
   function toast(msg) {
     const t = $('#toast'); t.textContent = msg; t.classList.add('show');
@@ -103,13 +106,14 @@
   /* ————— Cabecera ————— */
   function setHeader(title, eyebrow, opts = {}) {
     $('#pageTitle').textContent = title;
-    $('#eyebrow').textContent = eyebrow || 'Guía no oficial';
+    $('#eyebrow').textContent = eyebrow || '';
     $('#backBtn').hidden = !opts.back;
     document.title = title + ' · Guía Pacha';
   }
   function renderDatePill() {
     const s = cur();
-    $('#datePill').innerHTML = `${s.emoji} ${S.day} · A${S.year}`;
+    $('#datePill').innerHTML = `${sw(s.id)}<span>${S.day} ${s.name.slice(0, 3).toLowerCase()}.</span><span class="y">año ${S.year}</span>`;
+    document.documentElement.dataset.season = s.id;
     document.documentElement.style.setProperty('--season', `var(--${s.id})`);
     document.documentElement.style.setProperty('--season-soft', `var(--${s.id}-soft)`);
   }
@@ -147,36 +151,38 @@
   /* ——— Hoy ——— */
   route('/hoy', 'hoy', view => {
     const s = cur();
-    setHeader('Hoy', `${s.name} · Año ${S.year}`);
+    setHeader('Hoy', '');
     const daysLeft = SEASON_DAYS - S.day;
     const fests = festivalsOn(s.id, S.day);
     const bdays = birthdaysOn(s.id, S.day);
 
     let html = `
-      <section class="hero" style="--season: var(--${s.id}); --season-soft: var(--${s.id}-soft)">
-        <div class="hero-deco">${s.emoji}</div>
-        <span class="season-tag">${s.emoji} ${s.name} · Año ${S.year}</span>
-        <div class="big">Día ${S.day}</div>
-        <div class="sub">${weekday(S.day)} · ${daysLeft === 0 ? 'Último día de la estación' : `quedan ${daysLeft} días de ${s.name.toLowerCase()}`}</div>
-        <div class="progress"><span style="width:${(S.day / SEASON_DAYS) * 100}%"></span></div>
+      <section class="hero s-${s.id}">
+        <div class="hero-line"><span>${s.name}, año ${S.year}</span><span>${weekday(S.day)}</span></div>
+        <div class="hero-body">
+          <div class="big" aria-label="Día ${S.day}">${S.day}</div>
+          ${bdays.length ? `<a class="hero-portrait" href="#/aldeano/${bdays[0].id}">${pic(villagerPortraitFile(bdays[0]), ini(bdays[0].name), villagerIconFile(bdays[0]))}<span>Cumple ${esc(bdays[0].name)}</span></a>` : ''}
+        </div>
+        <div class="sub">${daysLeft === 0 ? 'Último día de la estación' : `Quedan ${daysLeft} días de ${s.name.toLowerCase()}`}</div>
+        <div class="progress" aria-hidden="true"><span style="width:${(S.day / SEASON_DAYS) * 100}%"></span></div>
         <div class="day-nav">
-          <button class="btn ghost" data-act="prev">‹ Ayer</button>
-          <button class="btn primary" data-act="next">Siguiente día ›</button>
+          <button class="btn ghost" data-act="prev">Día anterior</button>
+          <button class="btn primary" data-act="next">Día siguiente</button>
         </div>
       </section>`;
 
     if (!S.onboarded) {
-      html += `<div class="callout moss" style="margin-top:12px">👋 Pon aquí el día en el que vas en tu partida (botón de la fecha arriba) y la app te dirá qué plantar, cumpleaños y festivales.</div>`;
+      html += `<div class="callout moss">Pon aquí el día en el que vas en tu partida (toca la fecha de arriba) y la app te dirá qué plantar, cumpleaños y festivales.</div>`;
     }
 
     html += `<div class="section-head"><h2>Hoy en el poblado</h2></div>`;
     if (!fests.length && !bdays.length) {
-      html += `<div class="card muted">Hoy no hay festivales ni cumpleaños. ¡Buen día para la granja!</div>`;
+      html += `<div class="card muted">Hoy no hay festivales ni cumpleaños. Buen día para la granja.</div>`;
     }
     fests.forEach(f => {
-      html += `<a class="row" href="#/festivales"><div class="emoji-badge">🎉</div><div class="main"><div class="title">${esc(f.name)}</div><div class="meta">${esc(place(f.place))}</div></div>${chev}</a>`;
+      html += `<a class="row" href="#/festivales"><div class="emoji-badge date s-${s.id}">${S.day}</div><div class="main"><div class="title">${esc(f.name)}</div><div class="meta">${esc(place(f.place))}</div></div>${chev}</a>`;
     });
-    bdays.forEach(v => { html += birthdayRow(v, 'Cumple hoy 🎂'); });
+    bdays.forEach(v => { html += birthdayRow(v, 'Cumple hoy'); });
 
     // Próximos 7 días
     const upcoming = [];
@@ -191,8 +197,8 @@
     if (!upcoming.length) html += `<div class="card muted">Semana tranquila.</div>`;
     html += '<div class="list">';
     upcoming.forEach(u => {
-      const when = `${untilText(u.i)} · ${SEASONS[u.si].emoji} ${u.d} ${weekday(u.d)}`;
-      if (u.type === 'f') html += `<a class="row" href="#/festivales"><div class="emoji-badge">🎉</div><div class="main"><div class="title">${esc(u.f.name)}</div><div class="meta">${when}</div></div>${chev}</a>`;
+      const when = `${untilText(u.i)} · ${weekday(u.d)} ${u.d} de ${SEASONS[u.si].name.toLowerCase()}`;
+      if (u.type === 'f') html += `<a class="row" href="#/festivales"><div class="emoji-badge date s-${SEASONS[u.si].id}">${u.d}</div><div class="main"><div class="title">${esc(u.f.name)}</div><div class="meta">${when}</div></div>${chev}</a>`;
       else html += birthdayRow(u.v, when);
     });
     html += '</div>';
@@ -220,7 +226,7 @@
     // Peces de la estación
     const fishNow = FISH.filter(f => f.seasons.includes(s.id) && f.seasons.length < 4).sort((a, b) => (b.contrib || 0) - (a.contrib || 0));
     html += `<div class="section-head"><h2>Peces solo de temporada</h2><a class="link" href="#/pesca?s=${s.id}">Pesca</a></div><div class="tags">`;
-    fishNow.forEach(f => { html += `<span class="tag ${s.id}"><span class="gi">${pic(f.name + '.png', fishEmoji[f.kind])}</span>${esc(f.name)}${f.rain ? ' 🌧️' : ''}</span>`; });
+    fishNow.forEach(f => { html += `<a class="tag ${s.id}" href="#/pesca?q=${encodeURIComponent(f.name)}"><span class="gi">${pic(f.name + '.png', '')}</span>${esc(f.name)}${f.rain ? '<small>con lluvia</small>' : ''}</a>`; });
     html += '</div>';
 
     // Favoritos
@@ -239,7 +245,7 @@
 
   function birthdayRow(v, meta) {
     const loves = v.loves.filter(i => i !== 'Mango' && i !== 'Poached Egg').slice(0, 3).map(itemLabel).join(', ');
-    return `<a class="row" href="#/aldeano/${v.id}">${avatar(v)}<div class="main"><div class="title">${esc(v.name)}</div><div class="meta">${esc(meta)} · ❤ ${esc(loves)}</div></div>${chev}</a>`;
+    return `<a class="row" href="#/aldeano/${v.id}">${avatar(v)}<div class="main"><div class="title">${esc(v.name)}</div><div class="meta">${esc(meta)}</div><div class="meta loves">Le encanta: ${esc(loves)}</div></div>${chev}</a>`;
   }
 
   function shiftDay(n) {
@@ -255,7 +261,7 @@
     const draw = () => {
       $('#sheetContent').innerHTML = `
         <h2>¿En qué día vas?</h2>
-        <div class="stepper">${SEASONS.map((s, i) => `<button class="chip s-${s.id}" aria-pressed="${i === sel.season}" data-s="${i}">${s.emoji} ${s.name}</button>`).join('')}</div>
+        <div class="stepper">${SEASONS.map((s, i) => `<button class="chip" aria-pressed="${i === sel.season}" data-s="${i}">${sw(s.id)}${s.name}</button>`).join('')}</div>
         <div class="days">${Array.from({ length: 28 }, (_, i) => `<button class="${i + 1 === sel.day ? 'sel' : ''}" data-d="${i + 1}">${i + 1}</button>`).join('')}</div>
         <div class="year-row"><span class="muted">Año de la partida</span><div class="ctrl"><button data-y="-1" aria-label="Año anterior">−</button><span>Año ${sel.year}</span><button data-y="1" aria-label="Año siguiente">+</button></div></div>
         <button class="btn primary" style="width:100%;margin-top:14px" data-ok>Guardar</button>`;
@@ -275,20 +281,20 @@
     const si = sid ? Math.max(0, seasonIdx(sid)) : S.season;
     const s = SEASONS[si];
     setHeader('Calendario', `${s.name} · 28 días`);
-    let html = `<div class="chips">${SEASONS.map((x, i) => `<a class="chip s-${x.id}" aria-pressed="${i === si}" href="#/calendario/${x.id}">${x.emoji} ${x.name}</a>`).join('')}</div>`;
-    html += `<div class="cal" style="--season: var(--${s.id})">${WEEKDAYS.map(w => `<div class="wd">${w}</div>`).join('')}`;
+    let html = `<div class="chips">${SEASONS.map((x, i) => `<a class="chip" aria-pressed="${i === si}" href="#/calendario/${x.id}">${sw(x.id)}${x.name}</a>`).join('')}</div>`;
+    html += `<div class="cal s-${s.id}">${WEEKDAYS.map(w => `<div class="wd">${w}</div>`).join('')}`;
     for (let d = 1; d <= SEASON_DAYS; d++) {
       const f = festivalsOn(s.id, d), b = birthdaysOn(s.id, d);
       const today = si === S.season && d === S.day;
-      const marks = f.map(x => x.season === 'all' ? '🏁' : '🎉').join('') + b.map(() => '🎂').join('');
+      const marks = f.map(x => `<i class="m ${x.season === 'all' ? 'race' : 'fest'}"></i>`).join('') + b.map(() => '<i class="m bday"></i>').join('');
       html += `<button class="d ${today ? 'today' : ''} ${f.some(x => x.season !== 'all') ? 'has-fest' : ''}" data-d="${d}" aria-label="Día ${d}"><span class="n">${d}</span><span class="marks">${marks}</span></button>`;
     }
-    html += `</div><div class="legend"><span>🎂 Cumpleaños</span><span>🎉 Festival</span><span>🏁 Carreras</span></div>`;
+    html += `</div><div class="legend"><span><i class="m bday"></i>Cumpleaños</span><span><i class="m fest"></i>Festival</span><span><i class="m race"></i>Carreras</span></div>`;
 
     html += `<div class="section-head"><h2>Este mes</h2></div><div class="list">`;
     for (let d = 1; d <= SEASON_DAYS; d++) {
       festivalsOn(s.id, d).filter(f => f.season !== 'all').forEach(f => {
-        html += `<a class="row" href="#/festivales"><div class="emoji-badge">🎉</div><div class="main"><div class="title">${esc(f.name)}</div><div class="meta">Día ${d} · ${weekday(d)} · ${esc(place(f.place))}</div></div>${chev}</a>`;
+        html += `<a class="row" href="#/festivales"><div class="emoji-badge date s-${s.id}">${d}</div><div class="main"><div class="title">${esc(f.name)}</div><div class="meta">Día ${d} · ${weekday(d)} · ${esc(place(f.place))}</div></div>${chev}</a>`;
       });
       birthdaysOn(s.id, d).forEach(v => { html += birthdayRow(v, `Día ${d} · ${weekday(d)}`); });
     }
@@ -300,11 +306,11 @@
   function openDaySheet(si, d) {
     const s = SEASONS[si];
     const f = festivalsOn(s.id, d), b = birthdaysOn(s.id, d);
-    let html = `<h2>${s.emoji} ${s.name} ${d} · ${weekday(d)}</h2>`;
+    let html = `<h2>${weekday(d)} ${d} de ${s.name.toLowerCase()}</h2>`;
     if (!f.length && !b.length) html += '<p class="muted">No hay eventos este día.</p>';
-    f.forEach(x => { html += `<div class="card"><h3>🎉 ${esc(x.name)}</h3><p class="small muted">${esc(place(x.place))}</p><p class="small">${esc(x.desc)}</p></div>`; });
+    f.forEach(x => { html += `<div class="card"><h3>${esc(x.name)}</h3><p class="small muted">${esc(place(x.place))}</p><p class="small">${esc(x.desc)}</p></div>`; });
     b.forEach(v => {
-      html += `<div class="card"><h3>🎂 Cumpleaños de ${esc(v.name)}</h3><div style="margin-top:6px">${v.loves.slice(0, 8).map(i => giftChip(i, 'love')).join('')}</div><a class="btn ghost" style="margin-top:6px" href="#/aldeano/${v.id}">Ver ficha</a></div>`;
+      html += `<div class="card"><div class="bday-head">${avatar(v)}<h3>Cumpleaños de ${esc(v.name)}</h3></div><div style="margin-top:6px">${v.loves.slice(0, 8).map(i => giftChip(i, 'love')).join('')}</div><a class="btn ghost" style="margin-top:6px" href="#/aldeano/${v.id}">Ver ficha</a></div>`;
     });
     html += `<button class="btn primary" style="width:100%;margin-top:14px" data-set>Poner como día actual</button>`;
     $('#sheetContent').innerHTML = html;
@@ -320,10 +326,10 @@
       <div class="search">${searchIco}<input type="search" placeholder="Buscar cultivo…" value="${esc(st.q)}" aria-label="Buscar cultivo"></div>
       <div class="chips" data-g="s">
         <button class="chip" data-v="all" aria-pressed="${st.s === 'all'}">Todas</button>
-        ${SEASONS.map(x => `<button class="chip s-${x.id}" data-v="${x.id}" aria-pressed="${st.s === x.id}">${x.emoji} ${x.name}</button>`).join('')}
+        ${SEASONS.map(x => `<button class="chip" data-v="${x.id}" aria-pressed="${st.s === x.id}">${sw(x.id)}${x.name}</button>`).join('')}
       </div>
       <div class="toolbar">
-        <select data-g="t" aria-label="Tipo"><option value="all">Todos los tipos</option>${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${st.t === k ? 'selected' : ''}>${typeEmoji[k]} ${v}</option>`).join('')}</select>
+        <select data-g="t" aria-label="Tipo"><option value="all">Todos los tipos</option>${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${st.t === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
         <select data-g="o" aria-label="Ordenar"><option value="name">A–Z</option><option value="grow" ${st.sort === 'grow' ? 'selected' : ''}>Más rápidos</option><option value="contrib" ${st.sort === 'contrib' ? 'selected' : ''}>Más contribución</option></select>
       </div>
       <div class="list cols" id="cropList"></div>
@@ -336,7 +342,7 @@
       if (st.sort === 'grow') list.sort((a, b) => a.grow - b.grow);
       else if (st.sort === 'contrib') list.sort((a, b) => (b.contrib[1] || 0) - (a.contrib[1] || 0));
       else list.sort((a, b) => a.name.localeCompare(b.name, 'es'));
-      $('#cropList').innerHTML = list.length ? list.map(cropRow).join('') : `<div class="empty"><div class="big">🌱</div>Nada por aquí.</div>`;
+      $('#cropList').innerHTML = list.length ? list.map(cropRow).join('') : `<div class="empty">Ningún cultivo con esos filtros.</div>`;
       safeReplace(`#/cultivos?s=${st.s}&t=${st.t}&o=${st.sort}${st.q ? '&q=' + encodeURIComponent(st.q) : ''}`);
     };
     $('input', view).oninput = e => { st.q = e.target.value; draw(); };
@@ -348,8 +354,8 @@
 
   function cropRow(c) {
     const regrow = c.regrow ? ` · rebrota cada ${c.regrow}` : '';
-    const ss = c.seasons.map(id => seasonById(id).emoji).join('');
-    return `<a class="row" href="#/cultivo/${c.id}"><div class="emoji-badge">${cropPic(c)}</div><div class="main"><div class="title">${esc(c.name)} ${isFav(c.id) ? '⭐' : ''}</div><div class="meta">${ss} ${c.grow} días${regrow} · ${esc(place(c.place))}</div></div><div class="side"><div class="num">${c.contrib[1] ?? '—'}</div><div class="unit">contrib.</div></div></a>`;
+    const ss = swatches(c.seasons);
+    return `<a class="row" href="#/cultivo/${c.id}"><div class="emoji-badge">${cropPic(c)}</div><div class="main"><div class="title">${esc(c.name)}${isFav(c.id) ? starIco : ''}</div><div class="meta">${ss}${c.grow} días${regrow} · ${esc(place(c.place))}</div></div><div class="side"><div class="num">${c.contrib[1] ?? '—'}</div><div class="unit">contrib.</div></div></a>`;
   }
 
   route('/cultivo/([\\w-]+)', 'cultivos', (view, [id]) => {
@@ -360,11 +366,11 @@
     const q = ['Silvestre', 'Base', 'Buena', 'Mejor', 'Óptima'];
     const en = S.names === 'es' ? `<div class="muted small">${esc(c.en)}</div>` : '';
     let html = `
-      <div class="detail-head"><div class="emoji-badge" style="width:76px;height:76px;font-size:40px;border-radius:24px">${cropPic(c)}</div>
+      <div class="detail-head"><div class="emoji-badge xl">${cropPic(c)}</div>
         <div><h2>${esc(c.name)}</h2>${en}<div class="tags" style="margin-top:8px">${seasonTags(c.seasons)}</div></div>
-        <button class="fav-btn" data-fav="${c.id}" aria-label="Favorito">${isFav(c.id) ? '⭐' : '☆'}</button></div>
+        <button class="fav-btn" data-fav="${c.id}" aria-label="Favorito" aria-pressed="${isFav(c.id)}">${starIco}</button></div>
       <div class="kv">
-        <div><div class="k">Tipo</div><div class="v">${typeEmoji[c.type]} ${TYPES[c.type]}</div></div>
+        <div><div class="k">Tipo</div><div class="v">${TYPES[c.type]}</div></div>
         <div><div class="k">Crece en</div><div class="v">${c.grow} días</div></div>
         <div><div class="k">Rebrota</div><div class="v">${c.regrow ? `cada ${c.regrow} días` : 'No (1 cosecha)'}</div></div>
         <div><div class="k">Semilla silvestre</div><div class="v">${esc(place(c.place))}</div></div>
@@ -396,7 +402,7 @@
       const dates = [];
       let d = cd + c.grow;
       while (d <= limit) { dates.push(d); if (!c.regrow) break; d += c.regrow; }
-      const fmt = x => x > SEASON_DAYS ? `${SEASONS[(cs + 1) % 4].emoji} ${x - SEASON_DAYS}` : `${seasonById(sid).emoji} ${x}`;
+      const fmt = x => x > SEASON_DAYS ? `${SEASONS[(cs + 1) % 4].name.slice(0, 3)}. ${x - SEASON_DAYS}` : `Día ${x}`;
       calc.innerHTML = `
         <div class="toolbar" style="margin:0 0 10px">
           <label class="small muted">Plantar el día</label>
@@ -408,7 +414,7 @@
         ${dates.length ? `<p style="margin:0 0 8px"><strong>${dates.length} ${dates.length === 1 ? 'cosecha' : 'cosechas'}</strong> antes de que acabe la temporada${nextOk ? ' (sigue en la siguiente estación)' : ''}:</p>
           <div class="tags">${dates.map(x => `<span class="tag ${x > SEASON_DAYS ? SEASONS[(cs + 1) % 4].id : sid}">${fmt(x)}</span>`).join('')}</div>
           <p class="small muted" style="margin:10px 0 0">Total en calidad base: <strong>${dates.length * (c.contrib[1] || 0)}</strong> de contribución por planta.</p>`
-          : `<div class="callout">⚠️ No llega a tiempo: necesita ${c.grow} días y solo quedan ${limit - cd}.</div>`}`;
+          : `<div class="callout">No llega a tiempo: necesita ${c.grow} días y solo quedan ${limit - cd}.</div>`}`;
       $('[data-cs]', calc).onchange = e => { cs = +e.target.value; drawCalc(); };
       $('[data-cd]', calc).onchange = e => { cd = +e.target.value; drawCalc(); };
     };
@@ -422,7 +428,7 @@
     view.innerHTML = `
       <div class="search">${searchIco}<input type="search" placeholder="Nombre o regalo (p. ej. «calabaza»)…" value="${esc(st.q)}" aria-label="Buscar aldeano o regalo"></div>
       <div class="chips" data-g="f">
-        ${[['all', 'Todos'], ['Pachan', 'Pachan'], ['Mograni', 'Mograni'], ['Yakuan', 'Yakuan'], ['romance', '💗 Romance'], ['fav', '⭐ Favoritos']]
+        ${[['all', 'Todos'], ['Pachan', 'Pachan'], ['Mograni', 'Mograni'], ['Yakuan', 'Yakuan'], ['romance', 'Romance'], ['fav', 'Favoritos']]
           .map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${st.f === v}">${l}</button>`).join('')}
       </div>
       <div class="toolbar"><span class="small muted" id="vCount"></span>
@@ -441,7 +447,7 @@
         const byLove = list.filter(v => v.loves.some(matchItem));
         const byLike = list.filter(v => v.likes.some(matchItem) && !byLove.includes(v));
         if (byLove.length || byLike.length) {
-          hitsHtml = `<div class="card" style="margin-bottom:10px"><h3>🎁 Regalos que coinciden con «${esc(st.q)}»</h3>
+          hitsHtml = `<div class="card" style="margin-bottom:10px"><h3>Regalos que coinciden con «${esc(st.q)}»</h3>
             ${byLove.length ? `<div class="gift-group"><h3><span class="dot" style="background:var(--love)"></span>Le encanta</h3>${byLove.map(v => `<a class="gift love" href="#/aldeano/${v.id}">${esc(v.name)}<span class="en">${esc(v.loves.filter(matchItem).map(itemLabel).join(', '))}</span></a>`).join('')}</div>` : ''}
             ${byLike.length ? `<div class="gift-group"><h3><span class="dot" style="background:var(--like)"></span>Le gusta</h3>${byLike.map(v => `<a class="gift like" href="#/aldeano/${v.id}">${esc(v.name)}<span class="en">${esc(v.likes.filter(matchItem).map(itemLabel).join(', '))}</span></a>`).join('')}</div>` : ''}
           </div>`;
@@ -455,8 +461,8 @@
       $('#people').innerHTML = list.length ? list.map(v => {
         const s = seasonById(v.season);
         const until = daysUntil(seasonIdx(v.season), v.day);
-        return `<a class="person" href="#/aldeano/${v.id}">${isFav(v.id) ? '<span class="fav">⭐</span>' : ''}${avatar(v)}<div class="name">${esc(v.name)}</div><div class="bday">${s.emoji} ${v.day} ${s.name}${until <= 7 ? ` · ${until === 0 ? '¡hoy!' : `en ${until} d`}` : ''}</div></a>`;
-      }).join('') : (hitsHtml ? '' : `<div class="empty"><div class="big">🔎</div>Sin resultados.</div>`);
+        return `<a class="person clan-${v.clan.toLowerCase()}" href="#/aldeano/${v.id}">${isFav(v.id) ? `<span class="fav">${starIco}</span>` : ''}${avatar(v)}<div class="name">${esc(v.name)}</div><div class="bday">${sw(s.id)}${v.day} ${s.name.toLowerCase()}${until <= 7 ? `<b>${until === 0 ? 'hoy' : `en ${until} d`}</b>` : ''}</div></a>`;
+      }).join('') : (hitsHtml ? '' : `<div class="empty">Nadie coincide con esa búsqueda.</div>`);
       safeReplace(`#/aldeanos?f=${st.f}&o=${st.o}${st.q ? '&q=' + encodeURIComponent(st.q) : ''}`);
     };
     $('input', view).oninput = e => { st.q = e.target.value; draw(); };
@@ -478,17 +484,17 @@
     let html = `
       <div class="detail-head">${avatar(v, true)}
         <div><h2>${esc(v.name)}</h2><div class="role">${esc(v.role)}</div></div>
-        <button class="fav-btn" data-fav="${v.id}" aria-label="Favorito">${isFav(v.id) ? '⭐' : '☆'}</button></div>
+        <button class="fav-btn" data-fav="${v.id}" aria-label="Favorito" aria-pressed="${isFav(v.id)}">${starIco}</button></div>
       <div class="kv">
-        <div><div class="k">Cumpleaños</div><div class="v">${s.emoji} ${v.day} de ${s.name}</div></div>
+        <div><div class="k">Cumpleaños</div><div class="v">${sw(s.id)}${v.day} de ${s.name.toLowerCase()}</div></div>
         <div><div class="k">Falta</div><div class="v">${untilText(until)}</div></div>
         <div><div class="k">Clan</div><div class="v">${v.clan}</div></div>
-        <div><div class="k">Romance</div><div class="v">${v.romance ? '💗 Sí' : 'Amistad'}</div></div>
+        <div><div class="k">Romance</div><div class="v">${v.romance ? 'Sí' : 'Solo amistad'}</div></div>
       </div>
       <div class="section-head"><h2>Regalos esta semana</h2><span class="small muted">Semana ${Math.floor((S.day - 1) / 7) + 1} · ${cur().name}</span></div>
       <div class="card"><div class="week-gifts">
-        <button data-g="1" class="${given >= 1 ? 'on' : ''}" aria-label="Primer regalo">🎁</button>
-        <button data-g="2" class="${given >= 2 ? 'on' : ''}" aria-label="Segundo regalo">🎁</button>
+        <button data-g="1" class="${given >= 1 ? 'on' : ''}" aria-label="Primer regalo">Regalo 1</button>
+        <button data-g="2" class="${given >= 2 ? 'on' : ''}" aria-label="Segundo regalo">Regalo 2</button>
         <span class="small muted">${given >= 2 ? 'Ya no admite más regalos esta semana.' : `Puedes darle ${2 - given} ${2 - given === 1 ? 'regalo' : 'regalos'} más (máx. 1 al día).`}</span>
       </div></div>
       <div class="section-head"><h2>Gustos</h2></div>
@@ -512,18 +518,22 @@
     setHeader('Más', 'Todo lo demás');
     const done = Object.values(S.prophecies).filter(Boolean).length;
     const caught = Object.values(S.fish).filter(Boolean).length;
-    const tiles = [
-      ['#/pesca', '🎣', 'Pesca', `${caught}/${FISH.length} capturados`],
-      ['#/animales', '🦬', 'Animales', 'Granja y mascotas'],
-      ['#/recoleccion', '🍄', 'Recolección', 'Plantas, árboles, setas'],
-      ['#/festivales', '🎉', 'Festivales', `${FESTIVALS.length} eventos`],
-      ['#/profecias', '🔺', 'Profecías', `${PROPHECIES.reduce((a, p, i) => a + p.reqs.filter((_, j) => S.prophecies[i + '-' + j]).length, 0)}/56 metas`],
-      ['#/inicio', '🧭', 'Primeros pasos', 'Día 1 y señales de humo'],
-      ['#/favoritos', '⭐', 'Favoritos', `${S.favs.length} guardados`],
-      ['#/ajustes', '⚙️', 'Ajustes', 'Tema, nombres, datos'],
-      ['#/acerca', 'ℹ️', 'Acerca de', 'Créditos y licencia']
+    const metas = PROPHECIES.reduce((a, p, i) => a + p.reqs.filter((_, j) => S.prophecies[i + '-' + j]).length, 0);
+    const big = [
+      ['#/pesca', `${caught}<small>/${FISH.length}</small>`, 'Pesca', 'Peces y animales acuáticos que llevas capturados', FISH.slice(0, 3).map(f => f.name + '.png')],
+      ['#/animales', FARM_ANIMALS.length, 'Animales', 'Granja, doma, mascotas y cobertizos', FARM_ANIMALS.slice(0, 3).map(a => a.img)],
+      ['#/recoleccion', TREES.length + GATHER.length, 'Recolección', 'Árboles, plantas silvestres, setas y medicinales', GATHER.slice(0, 3).map(g => g.en + '.png')],
+      ['#/profecias', `${metas}<small>/56</small>`, 'Profecías', 'Metas cumplidas de la pirámide de la Jungla', []],
+      ['#/festivales', FESTIVALS.length, 'Festivales', 'Eventos del año y carreras', []]
     ];
-    view.innerHTML = `<div class="tiles">${tiles.map(([h, i, t, d]) => `<a class="tile" href="${h}"><span class="ico">${i}</span><span class="t">${t}</span><span class="d">${d}</span></a>`).join('')}</div>${footer()}`;
+    const small = [
+      ['#/inicio', 'Primeros pasos', 'Día 1 y señales de humo'],
+      ['#/favoritos', 'Favoritos', `${S.favs.length} guardados`],
+      ['#/ajustes', 'Ajustes', 'Tema, nombres e imágenes'],
+      ['#/acerca', 'Acerca de', 'Créditos y licencia']
+    ];
+    view.innerHTML = `<div class="tiles">${big.map(([h, n, t, d, imgs]) => `<a class="tile" href="${h}"><span class="n">${n}</span><span class="t">${t}</span><span class="d">${d}</span>${imgs.length ? `<span class="strip">${imgs.map(f => `<span class="gi lg">${pic(f, '')}</span>`).join('')}</span>` : ''}</a>`).join('')}</div>
+      <div class="list">${small.map(([h, t, d]) => `<a class="row" href="${h}"><div class="main"><div class="title">${t}</div><div class="meta">${d}</div></div>${chev}</a>`).join('')}</div>${footer()}`;
     void done;
   });
 
@@ -533,8 +543,8 @@
     const st = { s: params.get('s') || 'all', m: 'all', q: params.get('q') || '', hide: false };
     view.innerHTML = `
       <div class="search">${searchIco}<input type="search" placeholder="Buscar pez…" value="${esc(st.q)}" aria-label="Buscar pez"></div>
-      <div class="chips" data-g="s"><button class="chip" data-v="all" aria-pressed="${st.s === 'all'}">Todas</button>${SEASONS.map(x => `<button class="chip s-${x.id}" data-v="${x.id}" aria-pressed="${st.s === x.id}">${x.emoji} ${x.name}</button>`).join('')}</div>
-      <div class="chips" data-g="m">${[['all', 'Cualquier método'], ['ah', '🪓 Hacha/arpón'], ['h', '🔱 Solo arpón'], ['rod', '🎣 Caña'], ['trap', '🪤 Trampa']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${st.m === v}">${l}</button>`).join('')}</div>
+      <div class="chips" data-g="s"><button class="chip" data-v="all" aria-pressed="${st.s === 'all'}">Todas</button>${SEASONS.map(x => `<button class="chip" data-v="${x.id}" aria-pressed="${st.s === x.id}">${sw(x.id)}${x.name}</button>`).join('')}</div>
+      <div class="chips" data-g="m">${[['all', 'Cualquier método'], ['ah', 'Hacha o arpón'], ['h', 'Solo arpón'], ['rod', 'Caña'], ['trap', 'Trampa']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${st.m === v}">${l}</button>`).join('')}</div>
       <div class="toolbar"><span class="count-badge" id="caught"></span><label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="hideCaught"> Ocultar capturados</label></div>
       <div class="list cols" id="fishList"></div>
       <div class="section-head"><h2>Consejos</h2></div><ul class="notes">${FISH_NOTES.map(n => `<li>${esc(n)}</li>`).join('')}</ul>
@@ -548,11 +558,11 @@
       $('#fishList').innerHTML = list.map(f => `
         <div class="row" data-id="${f.id}">
           <div class="emoji-badge">${fishPic(f)}</div>
-          <div class="main"><div class="title">${esc(f.name)} ${f.rain ? '🌧️' : ''}</div>
-            <div class="meta">${esc(place(f.place))} · ${f.seasons.length === 4 ? 'Todo el año' : f.seasons.map(id => seasonById(id).emoji).join('')} · ${esc(f.time)}</div>
+          <div class="main"><div class="title">${esc(f.name)}${f.rain ? '<small class="rain">con lluvia</small>' : ''}</div>
+            <div class="meta">${swatches(f.seasons)}${esc(place(f.place))} · ${esc(f.time)}</div>
             <div class="meta">${esc(f.tool)}${f.contrib ? ` · ${f.contrib} contrib.` : ''}</div></div>
-          <label class="check" style="border:0;padding:0" aria-label="Capturado"><input type="checkbox" ${S.fish[f.id] ? 'checked' : ''}><span></span></label>
-        </div>`).join('') || `<div class="empty"><div class="big">🎣</div>Nada con esos filtros.</div>`;
+          <label class="check solo" aria-label="Capturado"><input type="checkbox" ${S.fish[f.id] ? 'checked' : ''}><span></span></label>
+        </div>`).join('') || `<div class="empty">Nada con esos filtros.</div>`;
       $$('#fishList input', view).forEach(cb => cb.onchange = () => {
         const id = cb.closest('[data-id]').dataset.id; S.fish[id] = cb.checked; save();
         $('#caught').textContent = `${Object.values(S.fish).filter(Boolean).length}/${FISH.length} capturados`;
@@ -571,18 +581,18 @@
     setHeader('Animales', 'Doma, granja y mascotas', { back: true });
     let html = `<div class="section-head"><h2>Animales de granja</h2></div><div class="list cols">`;
     FARM_ANIMALS.forEach(a => {
-      html += `<div class="card"><div style="display:flex;gap:12px;align-items:center;margin-bottom:4px"><div class="emoji-badge big">${pic(a.img, '🐾')}</div><h3 style="margin:0">${esc(a.name)} <span class="muted small">${S.names === 'es' ? esc(a.en) : ''}</span></h3></div>
-        <div class="tags" style="margin:6px 0 8px"><span class="tag accent">📍 ${esc(place(a.place))}</span>${a.ride ? `<span class="tag moss">🐎 Se monta con ${a.ride}♥</span>` : ''}</div>
+      html += `<div class="card"><div style="display:flex;gap:12px;align-items:center;margin-bottom:4px"><div class="emoji-badge big">${pic(a.img, ini(a.name))}</div><h3 style="margin:0">${esc(a.name)} <span class="muted small">${S.names === 'es' ? esc(a.en) : ''}</span></h3></div>
+        <div class="tags" style="margin:6px 0 8px"><span class="tag">${esc(place(a.place))}</span>${a.ride ? `<span class="tag moss">Se monta con ${a.ride} corazones</span>` : ''}</div>
         <div class="small"><strong>Produce:</strong> ${esc(a.produce)}</div>
         ${a.tame !== '—' ? `<div class="small"><strong>Doma:</strong> ${esc(a.tame)} con la flauta</div>` : ''}
         ${a.note ? `<div class="small muted" style="margin-top:4px">${esc(a.note)}</div>` : ''}</div>`;
     });
     html += `</div><div class="section-head"><h2>Mascotas</h2></div><div class="card"><div class="table-wrap"><table>
-      <tr><th>Animal</th><th>Dónde</th><th class="num">Acariciar</th><th>Montar</th></tr>
-      ${PETS.map(p => `<tr><td><span style="display:inline-flex;align-items:center;gap:8px"><span class="gi lg">${pic(p.img, '🐾')}</span><strong>${esc(p.name)}</strong></span></td><td>${esc(place(p.place))}</td><td class="num">${p.pet}♥</td><td>${esc(p.ride)}</td></tr>`).join('')}
+      <tr><th>Animal</th><th>Dónde</th><th class="num">Corazones para acariciar</th><th>Montar</th></tr>
+      ${PETS.map(p => `<tr><td><span style="display:inline-flex;align-items:center;gap:8px"><span class="gi lg">${pic(p.img, ini(p.name))}</span><strong>${esc(p.name)}</strong></span></td><td>${esc(place(p.place))}</td><td class="num">${p.pet}</td><td>${esc(p.ride)}</td></tr>`).join('')}
       </table></div></div>
       <div class="section-head"><h2>Cobertizos</h2></div><div class="list">
-      ${SHEDS.map(s => `<div class="row" style="cursor:default"><div class="emoji-badge">🛖</div><div class="main"><div class="title">${esc(s.name)}</div><div class="meta" style="white-space:normal">${esc(s.cost)}${s.note ? ' · ' + esc(s.note) : ''}</div></div><div class="side"><div class="num">${s.cap}</div><div class="unit">animales</div></div></div>`).join('')}
+      ${SHEDS.map(s => `<div class="row static"><div class="main"><div class="title">${esc(s.name)}</div><div class="meta" style="white-space:normal">${esc(s.cost)}${s.note ? ' · ' + esc(s.note) : ''}</div></div><div class="side"><div class="num">${s.cap}</div><div class="unit">animales</div></div></div>`).join('')}
       </div>
       <div class="section-head"><h2>Consejos</h2></div><ul class="notes">${ANIMAL_TIPS.map(t => `<li>${esc(t)}</li>`).join('')}</ul>${footer()}`;
     view.innerHTML = html;
@@ -592,29 +602,28 @@
   route('/recoleccion', 'mas', (view, _, params) => {
     setHeader('Recolección', 'Plantas silvestres y árboles', { back: true });
     const st = { s: params.get('s') || 'all' };
-    view.innerHTML = `<div class="chips" data-g="s"><button class="chip" data-v="all" aria-pressed="true">Todas</button>${SEASONS.map(x => `<button class="chip s-${x.id}" data-v="${x.id}" aria-pressed="false">${x.emoji} ${x.name}</button>`).join('')}</div><div id="gList"></div>${footer()}`;
+    view.innerHTML = `<div class="chips" data-g="s"><button class="chip" data-v="all" aria-pressed="true">Todas</button>${SEASONS.map(x => `<button class="chip" data-v="${x.id}" aria-pressed="false">${sw(x.id)}${x.name}</button>`).join('')}</div><div id="gList"></div>${footer()}`;
     const draw = () => {
       const ok = x => st.s === 'all' || x.seasons.includes(st.s);
       let html = `<div class="section-head"><h2>Frutos de árbol</h2></div><div class="list cols">`;
-      TREES.filter(ok).forEach(t => { html += gatherRow(t, '🌳'); });
+      TREES.filter(ok).forEach(t => { html += gatherRow(t); });
       html += '</div>';
       ['Comida silvestre', 'Plantas', 'Medicinales', 'Otros'].forEach(g => {
         const items = GATHER.filter(x => x.group === g && ok(x));
         if (!items.length) return;
-        const ico = { 'Comida silvestre': '🍄', 'Plantas': '🌿', 'Medicinales': '🌼', 'Otros': '🐚' }[g];
-        html += `<div class="section-head"><h2>${g}</h2></div><div class="list cols">${items.map(x => gatherRow(x, ico)).join('')}</div>`;
+        html += `<div class="section-head"><h2>${g}</h2></div><div class="list cols">${items.map(x => gatherRow(x)).join('')}</div>`;
       });
       $('#gList').innerHTML = html;
     };
     $$('[data-g=s] .chip', view).forEach(b => b.onclick = () => { st.s = b.dataset.v; $$('[data-g=s] .chip', view).forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
     draw();
   });
-  function gatherRow(x, ico) {
+  function gatherRow(x) {
     const loves = villagersFor(x.en, 'loves').map(v => v.name);
-    return `<div class="row" style="cursor:default;align-items:flex-start"><div class="emoji-badge">${pic(x.en + '.png', ico)}</div><div class="main"><div class="title">${esc(x.name)}</div>
-      <div class="meta">${esc(place(x.place))} · ${x.seasons.length === 4 ? 'Todo el año' : x.seasons.map(id => seasonById(id).emoji).join('')}</div>
+    return `<div class="row static top"><div class="emoji-badge">${pic(x.en + '.png', ini(x.name))}</div><div class="main"><div class="title">${esc(x.name)}</div>
+      <div class="meta">${swatches(x.seasons)}${esc(place(x.place))}</div>
       ${x.note ? `<div class="meta" style="white-space:normal">${esc(x.note)}</div>` : ''}
-      ${loves.length ? `<div class="meta" style="white-space:normal">❤ ${esc(loves.join(', '))}</div>` : ''}</div>
+      ${loves.length ? `<div class="meta loves">Le encanta a ${esc(loves.join(', '))}</div>` : ''}</div>
       <div class="side"><div class="num">${x.contrib}</div><div class="unit">contrib.</div></div></div>`;
   }
 
@@ -626,14 +635,14 @@
     sorted.forEach(f => {
       const s = seasonById(f.season);
       const n = daysUntil(seasonIdx(f.season), f.day);
-      html += `<div class="card"><div class="tags" style="margin-bottom:6px"><span class="tag ${s.id}">${s.emoji} ${s.name} ${f.day}</span><span class="tag">${untilText(n)}</span><span class="tag accent">📍 ${esc(place(f.place))}</span></div>
+      html += `<div class="card"><div class="tags" style="margin-bottom:6px"><span class="tag ${s.id}">${f.day} de ${s.name.toLowerCase()}</span><span class="tag">${untilText(n)}</span><span class="tag">${esc(place(f.place))}</span></div>
         <h3>${esc(f.name)}</h3>${S.names === 'es' ? `<div class="muted small" style="margin-top:-4px;margin-bottom:6px">${esc(f.en)}</div>` : ''}
         <p class="small" style="margin:0">${esc(f.desc)}</p>${f.req ? `<p class="small" style="margin:6px 0 0"><strong>Requisito:</strong> ${esc(f.req)}</p>` : ''}</div>`;
     });
     const race = FESTIVALS.find(f => f.season === 'all');
-    html += `<div class="card"><div class="tags" style="margin-bottom:6px"><span class="tag moss">Días 6 y 20 de cada estación</span></div><h3>🏁 ${esc(race.name)}</h3><p class="small" style="margin:0">${esc(race.desc)}</p></div>`;
-    SPECIAL_EVENTS.forEach(e => { html += `<div class="card"><h3>✨ ${esc(e.name)}</h3><p class="small" style="margin:0">${esc(e.desc)}</p></div>`; });
-    html += `</div><div class="callout" style="margin-top:12px">💡 A la mayoría de festivales se llega hablando con Jag en la hoguera antes de las 18:00.</div>${footer()}`;
+    html += `<div class="card"><div class="tags" style="margin-bottom:6px"><span class="tag moss">Días 6 y 20 de cada estación</span></div><h3>${esc(race.name)}</h3><p class="small" style="margin:0">${esc(race.desc)}</p></div>`;
+    SPECIAL_EVENTS.forEach(e => { html += `<div class="card"><h3>${esc(e.name)}</h3><p class="small" style="margin:0">${esc(e.desc)}</p></div>`; });
+    html += `</div><div class="callout">A la mayoría de festivales se llega hablando con Jag en la hoguera antes de las 18:00.</div>${footer()}`;
     view.innerHTML = html;
   });
 
@@ -645,13 +654,13 @@
       <div class="progress"><span style="width:${complete / PROPHECIES.length * 100}%;background:var(--moss)"></span></div>
       <p class="small muted" style="margin:0">Desde el día 8 de primavera del año 1 puedes entrar en la Jungla. Cada profecía completada se coloca en la pirámide.</p></div>
       <div class="section-head"><h2>Fases de la Jungla</h2></div><div class="list">
-      ${JUNGLE_STAGES.map(j => `<div class="row" style="cursor:default;align-items:flex-start"><div class="emoji-badge">${complete >= j.need ? '✅' : '🔒'}</div><div class="main"><div class="title">Fase ${j.n} · ${j.need} profecías</div><div class="meta" style="white-space:normal">${esc(j.desc)}</div></div></div>`).join('')}
+      ${JUNGLE_STAGES.map(j => `<div class="row static top ${complete >= j.need ? 'done' : 'locked'}"><div class="emoji-badge stage">${j.need}</div><div class="main"><div class="title">Fase ${j.n}${complete >= j.need ? ' · desbloqueada' : ''}</div><div class="meta" style="white-space:normal">${esc(j.desc)}</div></div></div>`).join('')}
       </div><div class="section-head"><h2>Lista de profecías</h2></div>`;
     PROPHECIES.forEach((p, i) => {
       const n = p.reqs.filter((_, j) => S.prophecies[i + '-' + j]).length;
       html += `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h3 style="margin:0">${esc(p.name)}</h3><span class="count-badge">${n}/4</span></div>
         <div style="margin-top:6px">${p.reqs.map((r, j) => `<label class="check"><input type="checkbox" data-k="${i}-${j}" ${S.prophecies[i + '-' + j] ? 'checked' : ''}><span>${esc(r)}</span></label>`).join('')}</div>
-        <div class="small" style="margin-top:6px">🏅 <strong>Recompensa:</strong> ${esc(p.reward)}</div></div>`;
+        <div class="small" style="margin-top:6px"><strong>Recompensa:</strong> ${esc(p.reward)}</div></div>`;
     });
     html += footer();
     view.innerHTML = html;
@@ -665,9 +674,9 @@
       <div class="section-head"><h2>Regalos del primer día</h2></div>
       <div class="card"><p class="small muted">Solo se pueden recoger el día 1, antes del Rito de Paso.</p>${FIRST_DAY.map(t => `<label class="check"><input type="checkbox"><span>${esc(t)}</span></label>`).join('')}</div>
       <div class="section-head"><h2>Momentos clave del año 1</h2></div>
-      <div class="list">${TIMELINE.map(t => `<div class="row" style="cursor:default"><div class="emoji-badge">📅</div><div class="main"><div class="title">${esc(t.what)}</div><div class="meta">${esc(t.when)}</div></div></div>`).join('')}</div>
+      <div class="list">${TIMELINE.map(t => `<div class="row static"><div class="main"><div class="title">${esc(t.what)}</div><div class="meta">${esc(t.when)}</div></div></div>`).join('')}</div>
       <div class="section-head"><h2>Señales de humo</h2></div>
-      <div class="list">${SMOKE_SIGNALS.map(s => `<div class="row" style="cursor:default;align-items:flex-start"><div class="emoji-badge">💨</div><div class="main"><div class="title">${esc(s.goal)}</div><div class="meta" style="white-space:normal">${esc(s.who)} → ${esc(s.reward)}</div></div></div>`).join('')}</div>
+      <div class="list">${SMOKE_SIGNALS.map(s => `<div class="row static top"><div class="main"><div class="title">${esc(s.goal)}</div><div class="meta loves">${esc(s.who)}: ${esc(s.reward)}</div></div></div>`).join('')}</div>
       <div class="section-head"><h2>Regalos</h2></div><ul class="notes">${GIFT_RULES.map(n => `<li>${esc(n)}</li>`).join('')}</ul>${footer()}`;
   });
 
@@ -676,8 +685,8 @@
     setHeader('Favoritos', 'Lo que has marcado', { back: true });
     const v = VILLAGERS.filter(x => isFav(x.id)), c = CROPS.filter(x => isFav(x.id));
     let html = '';
-    if (!v.length && !c.length) html = `<div class="empty"><div class="big">⭐</div>Marca aldeanos o cultivos con la estrella para tenerlos aquí.</div>`;
-    if (v.length) html += `<div class="section-head"><h2>Aldeanos</h2></div><div class="list">${v.map(x => birthdayRow(x, `${seasonById(x.season).emoji} ${x.day} ${seasonById(x.season).name}`)).join('')}</div>`;
+    if (!v.length && !c.length) html = `<div class="empty">Marca aldeanos o cultivos con la estrella para tenerlos aquí.</div>`;
+    if (v.length) html += `<div class="section-head"><h2>Aldeanos</h2></div><div class="list">${v.map(x => birthdayRow(x, `Cumple el ${x.day} de ${seasonById(x.season).name.toLowerCase()}`)).join('')}</div>`;
     if (c.length) html += `<div class="section-head"><h2>Cultivos</h2></div><div class="list cols">${c.map(cropRow).join('')}</div>`;
     view.innerHTML = html + footer();
   });
@@ -687,13 +696,13 @@
     setHeader('Ajustes', 'Personaliza la guía', { back: true });
     view.innerHTML = `
       <div class="section-head"><h2>Apariencia</h2></div>
-      <div class="chips" data-g="theme">${[['auto', '📱 Automático'], ['light', '☀️ Claro'], ['dark', '🌙 Oscuro']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${S.theme === v}">${l}</button>`).join('')}</div>
+      <div class="chips" data-g="theme">${[['auto', 'Como el sistema'], ['light', 'Claro'], ['dark', 'Oscuro']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${S.theme === v}">${l}</button>`).join('')}</div>
       <div class="section-head"><h2>Nombres de objetos</h2></div>
-      <div class="chips" data-g="names">${[['es', '🇪🇸 Español (traducción)'], ['en', '🇬🇧 Original (inglés)']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${S.names === v}">${l}</button>`).join('')}</div>
+      <div class="chips" data-g="names">${[['es', 'Español (traducción)'], ['en', 'Original en inglés']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${S.names === v}">${l}</button>`).join('')}</div>
       <p class="small muted">Las traducciones son orientativas y pueden no coincidir con los nombres del juego en español. En modo español también verás el nombre original debajo.</p>
       <div class="section-head"><h2>Imágenes</h2></div>
-      <div class="chips" data-g="images">${[[true, '🖼️ Mostrar imágenes de la wiki'], [false, '🔤 Solo iconos']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${S.images === v}">${l}</button>`).join('')}</div>
-      <p class="small muted">Las imágenes se descargan de la Roots of Pacha Wiki la primera vez que las ves (necesita internet) y luego quedan en caché. Sin conexión verás iconos.</p>
+      <div class="chips" data-g="images">${[[true, 'Mostrar imágenes de la wiki'], [false, 'Solo texto']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${S.images === v}">${l}</button>`).join('')}</div>
+      <p class="small muted">Las imágenes se descargan de la Roots of Pacha Wiki la primera vez que las ves (necesita internet) y luego quedan en caché. Sin conexión verás la inicial de cada nombre.</p>
       <div class="section-head"><h2>Tus datos</h2></div>
       <div class="card"><p class="small">Todo se guarda solo en este dispositivo: día de la partida, favoritos, peces capturados, profecías y regalos.</p>
         <button class="btn ghost" data-reset style="width:100%">Borrar todos mis datos</button></div>${footer()}`;
@@ -740,18 +749,18 @@
       const items = new Map();
       VILLAGERS.forEach(v => v.loves.forEach(i => { if (norm(i).includes(q) || norm(itemLabel(i)).includes(q)) { if (!items.has(i)) items.set(i, []); items.get(i).push(v); } }));
       let html = '';
-      if (vs.length) html += `<div class="result-group">Aldeanos</div><div class="list">${vs.map(v => birthdayRow(v, `${seasonById(v.season).emoji} ${v.day} ${seasonById(v.season).name}`)).join('')}</div>`;
+      if (vs.length) html += `<div class="result-group">Aldeanos</div><div class="list">${vs.map(v => birthdayRow(v, `Cumple el ${v.day} de ${seasonById(v.season).name.toLowerCase()}`)).join('')}</div>`;
       if (cs.length) html += `<div class="result-group">Cultivos</div><div class="list">${cs.map(cropRow).join('')}</div>`;
       if (fs.length) html += `<div class="result-group">Pesca</div><div class="list">${fs.map(f => `<a class="row" href="#/pesca?q=${encodeURIComponent(f.name)}"><div class="emoji-badge">${fishPic(f)}</div><div class="main"><div class="title">${esc(f.name)}</div><div class="meta">${esc(place(f.place))} · ${esc(f.time)}</div></div>${chev}</a>`).join('')}</div>`;
-      if (gs.length) html += `<div class="result-group">Recolección</div><div class="list">${gs.map(g => `<a class="row" href="#/recoleccion"><div class="emoji-badge">${pic(g.en + '.png', '🌿')}</div><div class="main"><div class="title">${esc(g.name)}</div><div class="meta">${esc(place(g.place))}</div></div>${chev}</a>`).join('')}</div>`;
+      if (gs.length) html += `<div class="result-group">Recolección</div><div class="list">${gs.map(g => `<a class="row" href="#/recoleccion"><div class="emoji-badge">${pic(g.en + '.png', ini(g.name))}</div><div class="main"><div class="title">${esc(g.name)}</div><div class="meta">${esc(place(g.place))}</div></div>${chev}</a>`).join('')}</div>`;
       if (items.size) {
         html += `<div class="result-group">Regalos favoritos</div><div class="card">`;
         [...items.entries()].slice(0, 6).forEach(([i, vlist]) => {
-          html += `<div class="gift-group" style="margin-top:4px"><h3>❤ ${esc(itemLabel(i))}</h3>${vlist.map(v => vChip(v, 'love')).join('')}</div>`;
+          html += `<div class="gift-group" style="margin-top:4px"><h3>${esc(itemLabel(i))}</h3>${vlist.map(v => vChip(v, 'love')).join('')}</div>`;
         });
         html += '</div>';
       }
-      $('#gres').innerHTML = html || `<div class="empty"><div class="big">🔎</div>Sin resultados.</div>`;
+      $('#gres').innerHTML = html || `<div class="empty">Sin resultados.</div>`;
     };
   }
 
@@ -769,7 +778,7 @@
     b.onclick = () => {
       const id = b.dataset.fav;
       S.favs = isFav(id) ? S.favs.filter(x => x !== id) : [...S.favs, id];
-      save(); b.textContent = isFav(id) ? '⭐' : '☆';
+      save(); b.setAttribute('aria-pressed', isFav(id));
       toast(isFav(id) ? 'Añadido a favoritos' : 'Quitado de favoritos');
     };
   }
