@@ -63,6 +63,12 @@ La carpeta `www/` se copia automáticamente dentro de la app cada vez que compil
 - Los datos vienen de la **Roots of Pacha Wiki**, con licencia **CC BY-SA 4.0**: hay que citar la fuente (ya está en «Acerca de») y el contenido derivado debe compartirse con la misma licencia. No pongas la app de pago ni añadas restricciones a esos datos.
 - Si quieres ir sobre seguro, puedes escribir a Soda Den (el estudio) para pedir permiso antes de publicar.
 
+## Diseño
+
+- Tipografía: **Bricolage Grotesque** (licencia SIL OFL, incluida en `www/fonts/`), empaquetada para que funcione sin conexión.
+- Colores en `www/css/app.css` (`:root`): piedra clara, tinta de carbón, verde de jungla y un color plano por estación (primavera rosa, verano amarillo, otoño naranja, invierno azul). La pantalla «Hoy» se pinta entera con el color de la estación.
+- Sin emojis: las imágenes vienen de la wiki y, si no cargan, se muestra la inicial del nombre.
+
 ## Actualizar datos
 
 Todo está en `www/js/data.js`, en listas fáciles de leer. Por ejemplo, para cambiar un cultivo edita su línea en `CROPS_RAW`. Las traducciones de objetos están en `www/js/i18n.js`.
