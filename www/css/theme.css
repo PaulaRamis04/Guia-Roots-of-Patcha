@@ -1,0 +1,146 @@
+/* Guía Pacha — tema «hoguera del clan»
+   Todo lo que define el aspecto vive aquí: colores, texturas, sombras, formas,
+   tipografías y movimiento. Cambia un valor y cambia en toda la app.
+   Contraste comprobado (WCAG AA) para el texto sobre cada superficie: ver LEEME. */
+
+@font-face {
+  font-family: "Grandstander";
+  src: url("../fonts/grandstander.woff2") format("woff2");
+  font-weight: 500 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("../fonts/nunito.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* — Pigmentos base (la paleta) — */
+  --clay-1: #F3E6D0;        /* arcilla clara: fondo */
+  --clay-2: #EAD7B7;        /* arcilla cálida: fondo de tarjetas */
+  --hide-1: #E2C9A0;        /* piel curtida: superficies interiores */
+  --wood-1: #CDAE80;        /* madera clara: pozos de imagen, bordes */
+  --charcoal: #3B2A20;      /* marrón carbón: texto */
+  --charcoal-2: #5E4433;    /* carbón suave: texto secundario */
+  --ochre-red: #B5583A;     /* ocre rojo: acento y detalles */
+  --ochre-red-deep: #A04B30;/* ocre rojo tostado: fondo de botones con texto claro */
+  --ochre-yellow: #D9A441;  /* ocre amarillo */
+  --moss: #7E8B55;          /* verde musgo apagado */
+  --water: #7A9A9A;         /* azul agua: solo pesca y agua */
+  --bone: #FFF6E6;          /* texto claro sobre pigmento */
+
+  /* — Papeles semánticos (claro) — */
+  --bg: var(--clay-1);
+  --surface: var(--clay-2);
+  --surface-2: var(--hide-1);
+  --surface-3: var(--wood-1);
+  --ink: var(--charcoal);
+  --ink-2: var(--charcoal-2);
+  --accent: var(--ochre-red-deep);
+  --accent-ink: var(--bone);
+  --accent-soft: var(--ochre-red);
+  --accent-text: #8A3E26;   /* enlaces sobre arcilla (≥ 4,5:1 en todas las superficies) */
+  --focus: var(--ochre-red-deep);
+  --on-field: var(--charcoal);
+  --moss-soft: #B3B98A;     /* musgo + arcilla: fondo de insignias con texto */
+  --on-moss: var(--charcoal);
+  --water-soft: #B0BCB2;    /* agua + arcilla: etiquetas de pesca */
+
+  /* Estaciones: variaciones suaves de la paleta (no colores nuevos) */
+  --spring: #ADAF86;        /* musgo + arcilla */
+  --summer: #E2BB73;        /* ocre amarillo + arcilla */
+  --fall: #D1987D;          /* ocre rojo + arcilla */
+  --winter: #B0BCB2;        /* agua helada + arcilla */
+
+  /* Gustos y clanes */
+  --love: var(--ochre-red);
+  --like: var(--moss);
+  --hate: var(--charcoal-2);
+  --pachan: var(--ochre-red);
+  --mograni: var(--ochre-yellow);
+  --yakuan: var(--moss);
+
+  /* — Tipografía — */
+  --font-title: "Grandstander", "Nunito", ui-rounded, system-ui, sans-serif;
+  --font: "Nunito", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* — Formas hechas a mano: radios ligeramente irregulares — */
+  --r-slab: 20px 24px 18px 26px / 24px 18px 26px 20px;    /* tarjetas (lajas) */
+  --r-slab-2: 24px 18px 26px 20px / 18px 26px 20px 24px;
+  --r-slab-3: 18px 26px 22px 20px / 22px 20px 18px 26px;
+  --r-pebble: 999px 920px 980px 900px / 900px 980px 920px 999px; /* botones (cantos rodados) */
+  --r-stone: 14px 18px 12px 16px / 16px 12px 18px 14px;   /* chips y etiquetas (piedras pintadas) */
+  --r-well: 16px 20px 14px 18px / 18px 14px 20px 16px;    /* pozos de imagen */
+
+  /* — Sombras cálidas (luz de hoguera) — */
+  --shadow-1: 0 1px 0 rgba(91, 58, 34, .10), 0 3px 8px -4px rgba(91, 58, 34, .35);
+  --shadow-2: 0 2px 0 rgba(91, 58, 34, .10), 0 10px 22px -10px rgba(91, 58, 34, .45);
+  --shadow-sheet: 0 -10px 34px rgba(59, 42, 32, .28);
+  --relief: inset 0 2px 0 rgba(255, 246, 230, .35), inset 0 -3px 0 rgba(59, 42, 32, .18);
+  --relief-pressed: inset 0 2px 3px rgba(59, 42, 32, .28);
+  --backdrop: rgba(46, 36, 29, .55);
+
+  /* — Texturas — */
+  --grain-opacity: .55;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .24 0 0 0 0 .15 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+           url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .36 0 0 0 0 .2 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  /* Trazo de pigmento hecho con el dedo (separadores) */
+  --stroke: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M2 6.2C14 3.6 26 7.4 40 5.1S66 3.2 80 5.6 104 7.2 118 4.4' fill='none' stroke='%23B5583A' stroke-width='3.4' stroke-linecap='round' opacity='.75'/%3E%3C/svg%3E");
+  --dots-color: rgba(94, 68, 51, .45);
+
+  /* — Ritmo y movimiento — */
+  --gutter: 16px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: 66px;
+  --ease: cubic-bezier(.25, .8, .3, 1);
+  --t-fast: .16s;
+  --t-settle: .36s;
+  color-scheme: light;
+}
+
+/* — Modo oscuro: el interior de la cueva a la luz de la hoguera — */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #2E241D; --surface: #3A2D24; --surface-2: #44362B; --surface-3: #4F3F32;
+    --ink: #F3E6D0; --ink-2: #D2BC9A;
+    --accent: var(--ochre-red-deep); --accent-ink: var(--bone); --accent-soft: #D9784F;
+    --accent-text: #EDA07E; --focus: #E9A15A; --on-field: #F3E6D0;
+    --moss-soft: #5A5D3C; --on-moss: #F3E6D0; --water-soft: #4F5C5A;
+    --spring: #5A5D3C; --summer: #7E5F2C; --fall: #78412D; --winter: #4F5C5A;
+    --love: #E0805C; --like: #A9B57A; --hate: #BFA88A;
+    --pachan: #D9784F; --mograni: var(--ochre-yellow); --yakuan: #A9B57A;
+    --shadow-1: 0 1px 0 rgba(0, 0, 0, .25), 0 4px 10px -5px rgba(10, 5, 2, .7);
+    --shadow-2: 0 2px 0 rgba(0, 0, 0, .25), 0 12px 24px -10px rgba(10, 5, 2, .8);
+    --relief: inset 0 2px 0 rgba(255, 220, 170, .12), inset 0 -3px 0 rgba(0, 0, 0, .3);
+    --relief-pressed: inset 0 2px 4px rgba(0, 0, 0, .45);
+    --backdrop: rgba(20, 14, 10, .65);
+    --grain-opacity: .9;
+    --dots-color: rgba(210, 188, 154, .4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #2E241D; --surface: #3A2D24; --surface-2: #44362B; --surface-3: #4F3F32;
+  --ink: #F3E6D0; --ink-2: #D2BC9A;
+  --accent: var(--ochre-red-deep); --accent-ink: var(--bone); --accent-soft: #D9784F;
+  --accent-text: #EDA07E; --focus: #E9A15A; --on-field: #F3E6D0;
+  --moss-soft: #5A5D3C; --on-moss: #F3E6D0; --water-soft: #4F5C5A;
+  --spring: #5A5D3C; --summer: #7E5F2C; --fall: #78412D; --winter: #4F5C5A;
+  --love: #E0805C; --like: #A9B57A; --hate: #BFA88A;
+  --pachan: #D9784F; --mograni: var(--ochre-yellow); --yakuan: #A9B57A;
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, .25), 0 4px 10px -5px rgba(10, 5, 2, .7);
+  --shadow-2: 0 2px 0 rgba(0, 0, 0, .25), 0 12px 24px -10px rgba(10, 5, 2, .8);
+  --relief: inset 0 2px 0 rgba(255, 220, 170, .12), inset 0 -3px 0 rgba(0, 0, 0, .3);
+  --relief-pressed: inset 0 2px 4px rgba(0, 0, 0, .45);
+  --backdrop: rgba(20, 14, 10, .65);
+  --grain-opacity: .9;
+  --dots-color: rgba(210, 188, 154, .4);
+  color-scheme: dark;
+}
+
+@media (min-width: 900px) { :root { --gutter: 28px; } }
