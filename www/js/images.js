@@ -1,11 +1,13 @@
 /* Imágenes de la Official Roots of Pacha Wiki (rootsofpacha.wiki.gg).
-   Se cargan desde la wiki cuando hay conexión (y el sistema las guarda en caché).
-   Si una imagen no carga, se muestra el icono alternativo. Las imágenes del juego
+   Las que aparecen en IMG_LOCAL (img-index.js) van incluidas en la app, en la carpeta img/,
+   y funcionan sin conexión. El resto se piden a la wiki cuando hay internet.
+   Si una imagen no carga, se muestra la inicial del nombre. Las imágenes del juego
    son propiedad de sus autores (Soda Den). */
 
 const WIKI_IMG_BASE = 'https://rootsofpacha.wiki.gg/wiki/Special:FilePath/';
 
 function wikiUrl(file) {
+  if (typeof IMG_LOCAL !== 'undefined' && IMG_LOCAL.has(file)) return 'img/' + file.replace(/[^A-Za-z0-9._-]/g, '_');
   return WIKI_IMG_BASE + encodeURIComponent(file.replace(/ /g, '_'));
 }
 
