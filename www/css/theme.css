@@ -63,6 +63,11 @@
   --pachan: var(--ochre-red);
   --mograni: var(--ochre-yellow);
   --yakuan: var(--moss);
+  /* Flores de relación (como en el juego: amarillas, rosas y rojas) */
+  --flower-friend: var(--ochre-yellow);
+  --flower-romance: #E29A98;  /* ocre rojo + arcilla, rosado */
+  --flower-dating: #C9473A;   /* ocre rojo vivo */
+  --flower-center: var(--bone);
 
   /* — Tipografía — */
   --font-title: "Grandstander", "Nunito", ui-rounded, system-ui, sans-serif;
@@ -114,6 +119,7 @@
     --spring: #5A5D3C; --summer: #7E5F2C; --fall: #78412D; --winter: #4F5C5A;
     --love: #E0805C; --like: #A9B57A; --hate: #BFA88A;
     --pachan: #D9784F; --mograni: var(--ochre-yellow); --yakuan: #A9B57A;
+    --flower-romance: #E8A3A0; --flower-dating: #E0644F; --flower-center: #F3E6D0;
     --shadow-1: 0 1px 0 rgba(0, 0, 0, .25), 0 4px 10px -5px rgba(10, 5, 2, .7);
     --shadow-2: 0 2px 0 rgba(0, 0, 0, .25), 0 12px 24px -10px rgba(10, 5, 2, .8);
     --relief: inset 0 2px 0 rgba(255, 220, 170, .12), inset 0 -3px 0 rgba(0, 0, 0, .3);
@@ -133,6 +139,7 @@
   --spring: #5A5D3C; --summer: #7E5F2C; --fall: #78412D; --winter: #4F5C5A;
   --love: #E0805C; --like: #A9B57A; --hate: #BFA88A;
   --pachan: #D9784F; --mograni: var(--ochre-yellow); --yakuan: #A9B57A;
+  --flower-romance: #E8A3A0; --flower-dating: #E0644F; --flower-center: #F3E6D0;
   --shadow-1: 0 1px 0 rgba(0, 0, 0, .25), 0 4px 10px -5px rgba(10, 5, 2, .7);
   --shadow-2: 0 2px 0 rgba(0, 0, 0, .25), 0 12px 24px -10px rgba(10, 5, 2, .8);
   --relief: inset 0 2px 0 rgba(255, 220, 170, .12), inset 0 -3px 0 rgba(0, 0, 0, .3);
