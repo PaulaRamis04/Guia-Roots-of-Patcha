@@ -378,7 +378,7 @@ const VILLAGERS = [
   V('Nann', 'Mograni', 'winter', 9, false, 'Mograni; tiene una hija que está de viaje.',
     'Mango, Strawberry Jam, Roast Meat, Chamomile Soap, Pomegranate',
     'Horns, Bones, Chamomile, Any Beer, Any Mead, Any Smoked Meat, Any Smoked Fish',
-    'Seaweed, Any Wheat, Any Rice, Any Sour Cream, Any Almond'),
+    'Seaweed, Wheat, Rice, Any Sour Cream, Almond'),
   V('Todu', 'Mograni', 'fall', 24, false, 'Le apasionan los bichos; tiene la idea de las trampas de agua.',
     'Mango, Medusalion, Trumpet, Stuffed Peppers, Pomegranate Jam, Tree Hopper, Spiny Flower, Panda Ant, Rainbow Grasshopper, Orchid Mantis, Peacock Butterfly',
     'Jumping Weevil, Saga, Mole Cricket, Petasida, Dragonfly, Silk Moth, Any Dried Fish, Any Smoked Fish',
