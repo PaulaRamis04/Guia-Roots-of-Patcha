@@ -20,6 +20,9 @@ pacha-guia/
 │   ├── js/data.js       ← datos del juego (cultivos, aldeanos, pesca…)
 │   ├── js/data-extra.js ← recetas, ideas, minerales, herramientas, artesanía y bichos
 │   ├── js/images.js     ← de qué archivo de la wiki sale cada imagen
+│   ├── js/search.js     ← búsqueda tolerante a erratas y acentos
+│   ├── css/theme.css    ← TODO el aspecto: colores, texturas, sombras, formas, fuentes
+│   ├── css/app.css      ← componentes (tarjetas, botones, chips…) que usan esos tokens
 │   ├── js/img-index.js  ← lista de imágenes incluidas en img/
 │   └── img/             ← imágenes descargadas de la wiki
 ├── android/        ← proyecto Android Studio (contenedor nativo que carga www/)
@@ -69,11 +72,17 @@ La carpeta `www/` se copia automáticamente dentro de la app cada vez que compil
 - Los datos vienen de la **Roots of Pacha Wiki**, con licencia **CC BY-SA 4.0**: hay que citar la fuente (ya está en «Acerca de») y el contenido derivado debe compartirse con la misma licencia. No pongas la app de pago ni añadas restricciones a esos datos.
 - Si quieres ir sobre seguro, puedes escribir a Soda Den (el estudio) para pedir permiso antes de publicar.
 
-## Diseño
+## Diseño: «hoguera del clan»
 
-- Tipografía: **Bricolage Grotesque** (licencia SIL OFL, incluida en `www/fonts/`), empaquetada para que funcione sin conexión.
-- Colores en `www/css/app.css` (`:root`): piedra clara, tinta de carbón, verde de jungla y un color plano por estación (primavera rosa, verano amarillo, otoño naranja, invierno azul). La pantalla «Hoy» se pinta entera con el color de la estación.
-- Sin emojis: las imágenes vienen de la wiki y, si no cargan, se muestra la inicial del nombre.
+Estética cozy de la Edad de Piedra: arcilla, pieles, madera, pigmentos de ocre y luz de hoguera. Todo el aspecto sale de los tokens de `www/css/theme.css`; cambiando un valor ahí cambia en toda la app.
+
+- **Tipografías** (licencia SIL OFL, incluidas en `www/fonts/` para que funcionen sin conexión): **Grandstander** para títulos y **Nunito** para texto y datos (sus cifras ya son tabulares).
+- **Paleta**: fondo arcilla `#F3E6D0` / `#EAD7B7`, superficies `#E2C9A0` / `#CDAE80`, texto carbón `#3B2A20` (secundario `#5E4433`), ocre rojo `#B5583A` (botones `#A04B30`), ocre amarillo `#D9A441`, musgo `#7E8B55`, agua `#7A9A9A` (solo pesca). Modo oscuro: cueva a la luz de la hoguera `#2E241D` / `#3A2D24`, texto `#F3E6D0`.
+- **Estaciones**: mezclas suaves de la paleta con la arcilla (primavera musgo, verano ocre amarillo, otoño ocre rojo, invierno agua helada).
+- **Contraste**: todo el texto cumple WCAG AA (4,5:1) sobre su superficie, en claro y en oscuro; se comprueba con un script que recorre las pantallas.
+- **Formas**: tarjetas como lajas con esquinas irregulares, botones como cantos rodados que se hunden al pulsar, chips como piedras pintadas, separadores de puntos y trazos de pigmento, sombras marrones cortas. Grano de arcilla muy sutil de fondo (SVG `feTurbulence`), siempre detrás de superficies lisas.
+- **Iconos** propios en estilo pintura rupestre (hoguera, luna con marcas, brote, figuras, cesta) y la **mano estampada** como motivo (en «Hoy», en estados vacíos y en Acerca de). Las imágenes del juego se muestran tal cual, en pixel art.
+- **Movimiento** lento y suave (asentamiento de tarjetas, hoguera que parpadea en la carga); se desactiva con «reducir movimiento».
 
 ## Actualizar datos
 

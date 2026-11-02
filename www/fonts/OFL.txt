@@ -1,4 +1,11 @@
-Google Inc.
+Fuentes incluidas en la app (www/fonts/):
+
+- Grandstander (grandstander.woff2), títulos.
+  Copyright 2020 The Grandstander Project Authors (https://github.com/Etcetera-Type-Co/Grandstander)
+- Nunito (nunito.woff2), texto y datos.
+  Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito)
+
+Ambas se distribuyen con la SIL Open Font License 1.1 (subconjunto latino descargado de Google Fonts).
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
