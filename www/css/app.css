@@ -435,6 +435,38 @@ a.gift:active { transform: translateY(1px); }
 .person .fav { position: absolute; top: 10px; left: 10px; z-index: 2; display: flex; gap: 2px; }
 .person .fav .heart { width: 16px; height: 16px; fill: var(--love); stroke: var(--bg); stroke-width: 2; }
 
+/* Flores de amistad y romance */
+.flower { width: 24px; height: 24px; flex: none; }
+.flower .fo { fill: none; stroke: var(--ink-2); stroke-width: 2.6; }
+.flower .fp { fill: var(--surface); }
+.flower .fc { fill: none; }
+.fk-friend { --flower: var(--flower-friend); }
+.fk-romance { --flower: var(--flower-romance); }
+.fk-dating { --flower: var(--flower-dating); }
+.flowers { display: grid; grid-template-columns: repeat(5, 44px); gap: 4px; }
+@media (min-width: 560px) { .flowers { grid-template-columns: repeat(10, 44px); } }
+.flowers button {
+  width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center;
+  border-radius: var(--r-pebble); transition: transform .12s var(--ease);
+}
+.flowers button:active { transform: scale(.9); }
+.flowers .flower { width: 34px; height: 34px; transition: transform var(--t-settle) var(--ease); }
+.flowers button[aria-pressed="true"] .flower .fp, .flw .flower .fp { fill: var(--flower); }
+.flowers button[aria-pressed="true"] .flower .fc, .flw .flower .fc { fill: var(--flower-center); }
+.flowers button[aria-pressed="true"] .flower { transform: rotate(18deg); }
+.flower-card [data-fl-hint] { margin: 6px 0 10px; }
+.flower-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.flower-steps li { display: flex; align-items: baseline; gap: 10px; font-size: 15px; line-height: 1.35; color: var(--ink-2); }
+.flower-steps li b {
+  flex: none; min-width: 30px; text-align: center; font-family: var(--font-title); font-size: 16px;
+  padding: 1px 6px; border-radius: var(--r-stone); background: var(--surface-2); color: var(--ink);
+}
+.flower-steps li.done { color: var(--ink); }
+.flower-steps li.done b { background: var(--flower); color: var(--charcoal); }
+.person .flw { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink-2); margin: 3px 6px 0; }
+.person .flw .flower { width: 16px; height: 16px; }
+@media (prefers-reduced-motion: reduce) { .flowers .flower, .flowers button { transition: none; } .flowers button[aria-pressed="true"] .flower { transform: none; } }
+
 .week-gifts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .week-gifts button {
   min-height: 48px; padding: 0 18px; border: 0; background: var(--surface-2); font-weight: 800; cursor: pointer;

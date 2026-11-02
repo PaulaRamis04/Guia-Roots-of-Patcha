@@ -7,7 +7,7 @@
   const defaults = {
     season: 0, day: 1, year: 1, names: 'es', theme: 'auto', images: true,
     favs: [], prophecies: {}, fish: {}, gifts: {}, cooked: {}, ideas: {}, onboarded: false,
-    filters: {}, courting: {}, firstDay: {}, recent: []
+    filters: {}, courting: {}, flowers: {}, firstDay: {}, recent: []
   };
   let S = load();
   function load() {
@@ -33,6 +33,14 @@
   const starIco = '<svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6c.7 0 1 .6 1.4 1.4l1.6 3.4 3.7.5c.9.1 1.5.4 1.6 1 .2.6-.3 1.1-.9 1.7l-2.7 2.6.7 3.7c.2.9 0 1.5-.5 1.8-.5.4-1.1.1-1.9-.3L12 17.6l-3.3 1.8c-.8.4-1.4.7-1.9.3-.5-.3-.7-.9-.5-1.8l.7-3.7L4.3 11.6c-.6-.6-1.1-1.1-.9-1.7.1-.6.7-.9 1.6-1l3.7-.5L10.6 5c.4-.8.7-1.4 1.4-1.4z"/></svg>';
   const heartIco = '<svg class="heart" viewBox="0 0 24 24" role="img" aria-label="Se puede cortejar"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>';
   const heartPlain = '<svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>';
+  /* Flor de relación: pétalos con contorno debajo y relleno encima (sin líneas interiores) */
+  const petals = [0, 72, 144, 216, 288].map(a => `<ellipse cx="12" cy="6.6" rx="3.5" ry="4.5" transform="rotate(${a} 12 12)"/>`).join('');
+  const flowerIco = `<svg class="flower" viewBox="0 0 24 24" aria-hidden="true"><g class="fo">${petals}</g><g class="fp">${petals}</g><circle class="fc" cx="12" cy="12" r="2.6"/></svg>`;
+  const FLOWER_MAX = 10;
+  const flowersOf = id => S.flowers[id] || 0;
+  /* Amarillas: amistad · rosas: se puede cortejar · rojas: salís juntos (wiki: Relationships) */
+  const flowerKind = v => !v.romance ? 'friend' : (S.courting[v.id] ? 'dating' : 'romance');
+  const flowerWord = n => `${n} ${n === 1 ? 'flor' : 'flores'}`;
   const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
   const searchIco = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>';
   const closeIco = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>';
@@ -366,7 +374,7 @@
       favV.sort((a, b) => (S.courting[b.id] ? 1 : 0) - (S.courting[a.id] ? 1 : 0) || daysUntil(seasonIdx(a.season), a.day) - daysUntil(seasonIdx(b.season), b.day))
         .forEach(v => {
           const g = S.gifts[weekKey(v)] || 0;
-          html += birthdayRow(v, `${S.courting[v.id] ? 'Cortejando · ' : ''}Cumple: ${untilText(daysUntil(seasonIdx(v.season), v.day)).toLowerCase()} · regalos esta semana ${g}/2`);
+          html += birthdayRow(v, `${S.courting[v.id] ? 'Cortejando · ' : ''}${flowersOf(v.id) ? flowerWord(flowersOf(v.id)) + ' · ' : ''}Cumple: ${untilText(daysUntil(seasonIdx(v.season), v.day)).toLowerCase()} · regalos esta semana ${g}/2`);
         });
       html += '</div>';
     }
@@ -631,7 +639,7 @@
         const s = seasonById(v.season);
         const until = daysUntil(seasonIdx(v.season), v.day);
         const marks = (S.courting[v.id] ? heartPlain : '') + (isFav(v.id) ? starIco : '');
-        return `<a class="person clan-${v.clan.toLowerCase()}" href="#/aldeano/${v.id}">${marks ? `<span class="fav">${marks}</span>` : ''}${avatar(v)}<div class="name">${esc(v.name)}</div><div class="bday">${sw(s.id)}${v.day} ${s.name.toLowerCase()}${until <= 7 ? `<b>${until === 0 ? 'hoy' : `en ${until} d`}</b>` : ''}</div></a>`;
+        return `<a class="person clan-${v.clan.toLowerCase()}" href="#/aldeano/${v.id}">${marks ? `<span class="fav">${marks}</span>` : ''}${avatar(v)}<div class="name">${esc(v.name)}</div><div class="bday">${sw(s.id)}${v.day} ${s.name.toLowerCase()}${until <= 7 ? `<b>${until === 0 ? 'hoy' : `en ${until} d`}</b>` : ''}</div>${flowersOf(v.id) ? `<div class="flw fk-${flowerKind(v)}">${flowerIco}${flowerWord(flowersOf(v.id))}</div>` : ''}</a>`;
       }).join('') : (hitsHtml ? '' : emptyMsg);
       remember('aldeanos', st, VIL_DEF);
       filterNote(st, VIL_DEF, reset, view);
@@ -663,6 +671,7 @@
         <div><div class="k">Cumpleaños</div><div class="v">${sw(s.id)}${v.day} de ${s.name.toLowerCase()}</div><div class="small muted">${untilText(until)}</div></div>
         <div><div class="k">Clan</div><div class="v">${v.clan}</div><div class="small muted">${v.romance ? (S.courting[v.id] ? 'Cortejo en marcha' : 'Se puede cortejar') : 'Solo amistad'}</div></div>
       </div>
+      ${flowerSection(v)}
       <div class="section-head"><h2>Le encanta</h2><span class="small muted">${v.loves.length} regalos</span></div>
       <div class="card"><div class="gift-group">${v.loves.map(i => giftChip(i, 'love')).join('')}</div></div>
       <div class="section-head"><h2>Regalos esta semana</h2><span class="small muted">Semana ${Math.floor((S.day - 1) / 7) + 1} · ${cur().name}</span></div>
@@ -679,10 +688,12 @@
       </div>${footer()}`;
     view.innerHTML = html;
     bindFav(view);
+    bindFlowers(view, v);
     const cb = $('[data-court]', view);
     if (cb) cb.onclick = () => {
       if (S.courting[v.id]) delete S.courting[v.id]; else S.courting[v.id] = true;
       save(); cb.setAttribute('aria-pressed', String(!!S.courting[v.id]));
+      paintFlowers(view, v);
       toast(S.courting[v.id] ? `Siguiendo tu cortejo a ${v.name}` : 'Ya no aparece como cortejo');
     };
     $$('.week-gifts button', view).forEach(b => b.onclick = () => {
@@ -691,6 +702,46 @@
       save(); render({ keep: true });
     });
   });
+
+  /* ——— Flores de amistad y romance (datos: wiki, página Relationships) ——— */
+  const FLOWER_STEPS = [
+    [2, () => 'Baila contigo, puede mandarte regalos y empiezan sus escenas'],
+    [4, () => 'Nueva escena'],
+    [6, v => v.romance ? 'Escena, su regalo único y te invita a una cita: podéis empezar a salir' : 'Escena, su regalo único y regalos más valiosos'],
+    [8, v => v.romance ? 'Nueva escena; si salís juntos, ya podéis besaros' : 'Nueva escena'],
+    [10, v => v.romance ? 'Si salís juntos, última cita: puedes proponerle la Unión (hace falta la cabaña mediana)' : 'Última escena: amistad al máximo']
+  ];
+  function flowerSection(v) {
+    const kindNote = v.romance
+      ? 'Las flores son rosas mientras os conocéis y se vuelven rojas cuando salís juntos (toca el corazón de arriba, «Cortejando»).'
+      : 'Con quien no se puede cortejar, las flores son amarillas: solo amistad.';
+    return `<div class="section-head"><h2>${v.romance ? 'Amistad y romance' : 'Amistad'}</h2><span class="small muted" data-fl-count></span></div>
+      <div class="card flower-card">
+        <div class="flowers" role="group" aria-label="Flores con ${esc(v.name)}">${Array.from({ length: FLOWER_MAX }, (_, i) =>
+          `<button type="button" data-fl="${i + 1}" aria-label="${flowerWord(i + 1)}">${flowerIco}</button>`).join('')}</div>
+        <p class="small muted" data-fl-hint></p>
+        <ul class="flower-steps">${FLOWER_STEPS.map(([n, t]) => `<li data-step="${n}"><b>${n}</b><span>${esc(t(v))}</span></li>`).join('')}</ul>
+        <p class="small muted" style="margin:10px 0 0">${kindNote} Si dejas de hablarle, la relación baja poco a poco, pero nunca más de 2 flores por debajo del máximo que alcanzaste.</p>
+      </div>`;
+  }
+  function paintFlowers(view, v) {
+    const card = $('.flower-card', view);
+    if (!card) return;
+    const n = flowersOf(v.id);
+    card.className = `card flower-card fk-${flowerKind(v)}`;
+    $$('[data-fl]', card).forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.fl <= n)));
+    $$('[data-step]', card).forEach(li => li.classList.toggle('done', +li.dataset.step <= n));
+    $('[data-fl-count]', view).textContent = `${n}/${FLOWER_MAX} flores`;
+    $('[data-fl-hint]', card).textContent = n ? 'Toca la última flor encendida para quitar una.' : 'Toca una flor para marcar cuántas tienes con este personaje.';
+  }
+  function bindFlowers(view, v) {
+    $$('[data-fl]', view).forEach(b => b.onclick = () => {
+      const k = +b.dataset.fl, n = flowersOf(v.id) === k ? k - 1 : k;
+      if (n > 0) S.flowers[v.id] = n; else delete S.flowers[v.id];
+      save(); paintFlowers(view, v);
+    });
+    paintFlowers(view, v);
+  }
 
   /* ——— Más ——— */
   route('/mas', 'mas', view => {
@@ -1168,7 +1219,7 @@
       ${chipGroup('images', 'Imágenes', [[true, 'Mostrar imágenes de la wiki'], [false, 'Solo texto']], S.images)}
       <p class="small muted">Las imágenes son las de la Roots of Pacha Wiki y van incluidas en la app, así que funcionan sin conexión. Si eliges «Solo texto» verás la inicial de cada nombre.</p>
       <div class="section-head"><h2>Tus datos</h2></div>
-      <div class="card"><p class="small">Todo se guarda solo en este dispositivo: día de la partida, favoritos, cortejos, peces capturados, recetas, ideas, profecías, regalos y los últimos filtros que usaste.</p>
+      <div class="card"><p class="small">Todo se guarda solo en este dispositivo: día de la partida, favoritos, cortejos, flores de cada aldeano, peces capturados, recetas, ideas, profecías, regalos y los últimos filtros que usaste.</p>
         <button class="btn ghost block" type="button" data-reset>Borrar todos mis datos</button></div>${footer()}`;
     bindChips(view, 'theme', v => { S.theme = v; save(); applyTheme(); });
     bindChips(view, 'images', v => { S.images = v === 'true'; save(); toast(S.images ? 'Imágenes activadas' : 'Solo texto'); });
