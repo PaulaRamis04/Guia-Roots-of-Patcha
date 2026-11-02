@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'es.guiapacha.app'
+    compileSdk 36
+
+    defaultConfig {
+        // Cambia este identificador antes de publicar: es único en Google Play y no se puede cambiar después.
+        applicationId 'es.guiapacha.app'
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // La web de la app (carpeta www/) se empaqueta como assets/www
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.activity:activity:1.10.1'
+    implementation 'androidx.core:core:1.16.0'
+    implementation 'androidx.webkit:webkit:1.14.0'
+}
+
+// Copia ../../www dentro de los assets antes de cada compilación
+tasks.register('copyWebAssets', Copy) {
+    from "${rootDir}/../www"
+    into "${projectDir}/src/main/assets/www"
+}
+preBuild.dependsOn copyWebAssets
