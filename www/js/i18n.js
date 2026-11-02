@@ -136,6 +136,6 @@ function translateItem(en) {
 function agree(stem, noun) {
   const head = noun.split(' ')[0].toLowerCase();
   const plural = /s$/.test(head);
-  const fem = /as?$/.test(head) && head !== 'alma';
+  const fem = (/as?$/.test(head) && head !== 'alma') || ['carne', 'col', 'leche', 'miel'].includes(head);
   return stem + (fem ? 'a' : 'o') + (plural ? 's' : '');
 }

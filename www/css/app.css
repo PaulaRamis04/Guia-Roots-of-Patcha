@@ -395,6 +395,41 @@ select {
 .harvest > div:last-child .k { color: inherit; }
 .essentials { margin-bottom: 4px; }
 
+/* ——— ¿Qué sale más a cuenta? ——— */
+.best-use .gi { width: 40px; height: 40px; flex: none; display: grid; place-items: center; background: var(--surface-2); border-radius: var(--r-well); overflow: hidden; }
+.best-use .gi .pic { width: 32px; height: 32px; }
+.bu-hero {
+  display: flex; align-items: center; gap: 12px; padding: 12px; margin: -4px -4px 12px;
+  background: var(--moss-soft); color: var(--on-moss); border-radius: var(--r-slab-2);
+}
+.bu-hero .gi { width: 52px; height: 52px; background: var(--surface); }
+.bu-hero .gi .pic { width: 42px; height: 42px; }
+.bu-hero .main { flex: 1; min-width: 0; }
+.bu-hero .k { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.bu-name { font-family: var(--font-title); font-weight: 700; font-size: 20px; line-height: 1.2; }
+.bu-hero .bu-sub { color: inherit; }
+.bu-hero .side { text-align: right; flex: none; }
+.bu-hero .num { font-family: var(--font-title); font-weight: 800; font-size: 28px; line-height: 1; }
+.bu-hero .unit { font-size: 12px; font-weight: 700; }
+.bu-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.bu-row { display: flex; align-items: center; gap: 10px; padding: 6px 4px; min-height: 52px; text-decoration: none; border-radius: var(--r-stone); }
+a.bu-row { transition: background var(--t-fast); }
+a.bu-row:hover { background: var(--surface-2); }
+.bu-row .main { flex: 1; min-width: 0; }
+.bu-row .side { text-align: right; flex: none; min-width: 56px; }
+.bu-row .num { font-family: var(--font-title); font-weight: 800; font-size: 18px; line-height: 1.1; }
+.bu-row .unit { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+.bu-title { font-weight: 800; font-size: 15px; line-height: 1.3; }
+.bu-row.best .bu-title::after { content: "★"; color: var(--accent-soft); margin-left: 6px; }
+.bu-sub { font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.bu-bar { display: block; height: 6px; margin-top: 5px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.bu-bar > span { display: block; height: 100%; background: var(--moss); border-radius: 999px; transform-origin: left; animation: bu-grow var(--t-settle) var(--ease) both; }
+.bu-row.best .bu-bar > span { background: var(--accent-soft); }
+.bu-h3 { font-size: 16px; margin: 16px 0 6px; }
+.bu-note { margin: 12px 0 0; }
+@keyframes bu-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .bu-bar > span { animation: none; } }
+
 .gift-group { margin-top: 16px; }
 .gift-group:first-child { margin-top: 0; }
 .gift-group h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 0 0 8px; }
@@ -434,6 +469,38 @@ a.gift:active { transform: translateY(1px); }
 .person .bday b { color: var(--accent-text); font-weight: 800; margin-left: 4px; }
 .person .fav { position: absolute; top: 10px; left: 10px; z-index: 2; display: flex; gap: 2px; }
 .person .fav .heart { width: 16px; height: 16px; fill: var(--love); stroke: var(--bg); stroke-width: 2; }
+
+/* Flores de amistad y romance */
+.flower { width: 24px; height: 24px; flex: none; }
+.flower .fo { fill: none; stroke: var(--ink-2); stroke-width: 2.6; }
+.flower .fp { fill: var(--surface); }
+.flower .fc { fill: none; }
+.fk-friend { --flower: var(--flower-friend); }
+.fk-romance { --flower: var(--flower-romance); }
+.fk-dating { --flower: var(--flower-dating); }
+.flowers { display: grid; grid-template-columns: repeat(5, 44px); gap: 4px; }
+@media (min-width: 560px) { .flowers { grid-template-columns: repeat(10, 44px); } }
+.flowers button {
+  width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center;
+  border-radius: var(--r-pebble); transition: transform .12s var(--ease);
+}
+.flowers button:active { transform: scale(.9); }
+.flowers .flower { width: 34px; height: 34px; transition: transform var(--t-settle) var(--ease); }
+.flowers button[aria-pressed="true"] .flower .fp, .flw .flower .fp { fill: var(--flower); }
+.flowers button[aria-pressed="true"] .flower .fc, .flw .flower .fc { fill: var(--flower-center); }
+.flowers button[aria-pressed="true"] .flower { transform: rotate(18deg); }
+.flower-card [data-fl-hint] { margin: 6px 0 10px; }
+.flower-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.flower-steps li { display: flex; align-items: baseline; gap: 10px; font-size: 15px; line-height: 1.35; color: var(--ink-2); }
+.flower-steps li b {
+  flex: none; min-width: 30px; text-align: center; font-family: var(--font-title); font-size: 16px;
+  padding: 1px 6px; border-radius: var(--r-stone); background: var(--surface-2); color: var(--ink);
+}
+.flower-steps li.done { color: var(--ink); }
+.flower-steps li.done b { background: var(--flower); color: var(--charcoal); }
+.person .flw { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink-2); margin: 3px 6px 0; }
+.person .flw .flower { width: 16px; height: 16px; }
+@media (prefers-reduced-motion: reduce) { .flowers .flower, .flowers button { transition: none; } .flowers button[aria-pressed="true"] .flower { transform: none; } }
 
 .week-gifts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .week-gifts button {
