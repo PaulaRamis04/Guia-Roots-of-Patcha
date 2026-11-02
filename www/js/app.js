@@ -160,12 +160,29 @@
   [RECIPES.flatMap(r => r.ing), IDEAS.flatMap(i => i.mat || []), TOOLS.flatMap(g => g.items.flatMap(t => t.mat || [])),
     CRAFTING.flatMap(g => g.items.flatMap(t => t.mat || [])), PROCESSORS.flatMap(p => p.mat || [])]
     .forEach(list => list.forEach(([en]) => addItem(en, 'material')));
+  Object.values(ITEM_GROUPS).forEach(list => list.forEach(en => addItem(en, 'member')));
+
+  /* Genéricos («Cualquier miel»): qué objetos entran y a qué genéricos pertenece cada objeto */
+  const groupName = en => baseName(en).replace(/^Grapes (Juice|Jam|Wine|Vinegar|Mulled Wine)$/, 'Grape $1');
+  function membersOf(any) {
+    if (any === 'Any Dishes') return RECIPES.map(r => r.en);
+    return ITEM_GROUPS[any] || null;
+  }
+  const GROUPS_OF = new Map();
+  Object.entries(ITEM_GROUPS).forEach(([any, list]) => list.forEach(en => {
+    if (!GROUPS_OF.has(en)) GROUPS_OF.set(en, []);
+    GROUPS_OF.get(en).push(any);
+  }));
+  function groupsOf(en) {
+    const b = baseName(en);
+    return [...(GROUPS_OF.get(groupName(b)) || []), ...(recipeByEn[b] ? ['Any Dishes'] : [])];
+  }
 
   const KIND_ES = { crop: 'Cultivo', recipe: 'Receta', fish: 'Pesca', gather: 'Recolección', mineral: 'Mineral', tool: 'Herramienta', craft: 'Artesanía',
     proc: 'Procesador', fert: 'Fertilizante', bug: 'Bicho', utensil: 'Utensilio', gift: 'Objeto', material: 'Material' };
   function itemKind(it) {
     for (const k of ['crop', 'recipe', 'fish', 'gather', 'mineral', 'tool', 'utensil', 'proc', 'craft', 'fert', 'bug']) if (it.kinds[k]) return k;
-    return it.en.startsWith('Any ') ? 'category' : (it.kinds.gift ? 'gift' : 'material');
+    return it.en.startsWith('Any ') ? 'category' : (it.kinds.gift || it.kinds.member ? 'gift' : 'material');
   }
   /* Adónde lleva tocar un objeto: su ficha propia si la tiene, si no la ficha general de objeto */
   function itemHref(en) {
@@ -321,13 +338,27 @@
     html += `<p class="small muted bu-note">Valores de la wiki en calidad base: con mejor calidad suben todos. Lo que va con «+» también se gasta. Los platos cuentan entero aunque lleven otros ingredientes${raw == null ? '. La contribución de este objeto en crudo aún no está en la wiki (pendiente)' : ''}.</p></div>`;
     return html;
   }
+  /* Aldeanos con opinión sobre un objeto, también a través de sus genéricos («Cualquier miel») */
+  function fansOf(en, kind) {
+    const out = villagersFor(en, kind).map(v => ({ v }));
+    groupsOf(en).forEach(any => villagersFor(any, kind).forEach(v => {
+      if (!out.some(x => x.v === v)) out.push({ v, via: any });
+    }));
+    return out;
+  }
+  const fanChip = (x, cls) => x.via
+    ? `<a class="gift ${cls}" href="#/aldeano/${x.v.id}"><span class="gi round">${pic(villagerIconFile(x.v), '')}</span>${esc(x.v.name)}<span class="en">por ${esc(S.names === 'en' ? itemLabel(x.via) : lowerFirst(itemLabel(x.via)))}</span></a>`
+    : vChip(x.v, cls);
   function giftBlock(en, emptyMsg) {
-    const loves = villagersFor(en, 'loves'), likes = villagersFor(en, 'likes'), hates = villagersFor(en, 'hates');
+    const loves = fansOf(en, 'loves'), likes = fansOf(en, 'likes').filter(x => !loves.some(l => l.v === x.v)),
+      hates = fansOf(en, 'hates').filter(x => !loves.some(l => l.v === x.v) && !likes.some(l => l.v === x.v));
+    const groups = groupsOf(en);
     let html = `<div class="section-head"><h2>¿A quién regalarlo?</h2></div><div class="card">`;
+    if (groups.length) html += `<div class="gift-group"><h3>Cuenta como</h3>${groups.map(g => giftChip(g, '')).join('')}</div>`;
     if (!loves.length && !likes.length && !hates.length) html += `<p class="muted small" style="margin:0">${emptyMsg || 'Nadie tiene una opinión especial sobre esto: cuenta como regalo normal.'}</p>`;
-    if (loves.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--love)"></span>Le encanta a</h3>${loves.map(v => vChip(v, 'love')).join('')}</div>`;
-    if (likes.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--like)"></span>Le gusta a</h3>${likes.map(v => vChip(v, 'like')).join('')}</div>`;
-    if (hates.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--hate)"></span>Lo odia</h3>${hates.map(v => vChip(v, 'hate')).join('')}</div>`;
+    if (loves.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--love)"></span>Le encanta a</h3>${loves.map(x => fanChip(x, 'love')).join('')}</div>`;
+    if (likes.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--like)"></span>Le gusta a</h3>${likes.map(x => fanChip(x, 'like')).join('')}</div>`;
+    if (hates.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--hate)"></span>Lo odia</h3>${hates.map(x => fanChip(x, 'hate')).join('')}</div>`;
     return html + '</div>';
   }
   function giftChip(en, cls) {
@@ -1240,8 +1271,14 @@
           <div class="tags" style="margin-top:8px"><span class="tag">${kindLabel}</span>${d.seasons ? seasonTags(d.seasons) : ''}</div></div>
         ${favBtn(favId, label)}</div>`;
     if (facts.length) html += `<div class="kv essentials">${facts.join('')}</div>`;
-    else if (k === 'category') html += `<p class="small muted">Vale cualquier objeto de esta categoría.</p>`;
-    else html += `<p class="small muted">Aún no tenemos más datos de este objeto en la guía (pendiente). Consulta la wiki si necesitas el detalle.</p>`;
+    else if (k === 'category') {
+      const opts = membersOf(it.en);
+      if (opts) html += `<p class="small muted">Vale cualquiera de estas ${opts.length} opciones. Toca una para ver su ficha.</p>
+        <div class="section-head"><h2>Opciones</h2><span class="small muted">${opts.length}</span></div>
+        <div class="card"><div class="gift-group options">${opts.slice().sort((a, b) => itemLabel(a).localeCompare(itemLabel(b), 'es')).map(o => giftChip(o, '')).join('')}</div></div>`;
+      else html += `<p class="small muted">Vale cualquier objeto de esta categoría. La wiki aún no publica la lista completa.</p>`;
+    }
+    else if (!groupsOf(it.en).length) html += `<p class="small muted">Aún no tenemos más datos de este objeto en la guía (pendiente). Consulta la wiki si necesitas el detalle.</p>`;
     if (k === 'fish') html += `<label class="check card-check" style="margin-top:10px"><input type="checkbox" data-caught ${S.fish[d.id] ? 'checked' : ''}><span>Ya lo he capturado</span></label>`;
     html += matsList;
     if (k !== 'category') html += bestUseBlock(it.en);
@@ -1394,8 +1431,9 @@
       const k = itemKind(it);
       const loves = villagersFor(it.en, 'loves').map(v => v.name);
       const d = it.kinds[k] || {};
+      const gr = groupsOf(it.en).filter(g => g !== 'Any Dishes');
       const sub = loves.length ? `Le encanta a ${loves.slice(0, 4).join(', ')}${loves.length > 4 ? ` y ${loves.length - 4} más` : ''}`
-        : d.seasons ? `${seasonsText(d.seasons)}${d.place ? ' · ' + place(d.place) : ''}` : (d.place || d.unlock || d.out || '');
+        : d.seasons ? `${seasonsText(d.seasons)}${d.place ? ' · ' + place(d.place) : ''}` : (d.place || d.unlock || d.out || (gr.length ? 'Cuenta como ' + gr.map(g => lowerFirst(itemLabel(g))).join(', ') : ''));
       add(k === 'category' ? 'Categoría' : KIND_ES[k], [{ t: itemLabel(it.en) }, { t: it.en, w: .95 }], itemHref(it.en), itemIconFile(it.en), ini(itemLabel(it.en)), sub,
         k === 'gift' || k === 'material' || k === 'category' ? .92 : 1);
     });
