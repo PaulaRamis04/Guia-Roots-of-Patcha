@@ -194,6 +194,133 @@
     return `<div class="section-head"><h2>Se usa en</h2><span class="small muted">${uses.length} ${uses.length === 1 ? 'sitio' : 'sitios'}</span></div><div class="card">${Object.entries(groups).map(([k, list]) =>
       `<div class="gift-group"><h3>${plural[k]}</h3>${list.map(u => `<a class="gift" href="${u.href}"><span class="gi">${pic(u.img || itemIconFile(u.en), '')}</span>${esc(u.label || itemLabel(u.en))}</a>`).join('')}</div>`).join('')}</div>`;
   }
+  /* ——— ¿Qué sale más a cuenta? Compara la contribución del objeto tal cual con lo que se saca
+     procesándolo (y procesando el resultado) o cocinándolo. Datos: data-proc.js (wiki, calidad base). ——— */
+  const PROC_FROM = {}, PROC_OUT = {};
+  PROC_EDGES.forEach(e => { (PROC_FROM[e[0]] = PROC_FROM[e[0]] || []).push(e); PROC_OUT[e[1]] = e; });
+  const PROC_MACHINE = { juice: 'Press', oil: 'Press', milk: 'Press', gelatin: 'Press', flour: 'Mortar and Pestle', butter: 'Mortar and Pestle',
+    mayo: 'Mortar and Pestle', lard: 'Mortar and Pestle', plantmeat: 'Mortar and Pestle', dried: 'Solar Dryer', smoked: 'Smoker',
+    fermented: 'Fermenter', sourcream: 'Fermenter', cheese: 'Cheese Cloth', beer: 'Brewer', wine: 'Brewer', mead: 'Brewer',
+    pickled: 'Pickler', jam: 'Jam Maker', soap: 'Soap Maker', agedwine: 'Cask', mulledwine: 'Cask', agedcheese: 'Cask',
+    herbcheese: 'Cask', mushroomcheese: 'Cask', yarn: 'Spindle Whorl' };
+  const PROC_IMG = { juice: 'Juice', oil: 'Oil', flour: 'Flour', butter: 'Butter', mayo: 'Mayo', lard: 'Lard', plantmeat: 'Plant Meat',
+    dried: 'Dried Fruit', fermented: 'Fermented Vegetable', sourcream: 'Sour Cream', cheese: 'Cheese', beer: 'Beer', wine: 'Wine', mead: 'Mead',
+    pickled: 'Pickled Vegetable', jam: 'Jam', soap: 'Soap', agedwine: 'Aged Wine', mulledwine: 'Mulled Wine', agedcheese: 'Aged Cheese',
+    herbcheese: 'Herb Cheese', mushroomcheese: 'Mushroom Cheese' };
+  const PROC_DE = { juice: 'Zumo de ', oil: 'Aceite de ', milk: 'Leche de ', gelatin: 'Gelatina de ', flour: 'Harina de ', butter: 'Mantequilla de ',
+    mayo: 'Mayonesa de ', lard: 'Manteca de ', plantmeat: 'Carne vegetal de ', sourcream: 'Nata agria de ', cheese: 'Queso de ', beer: 'Cerveza de ',
+    wine: 'Vino de ', mead: 'Hidromiel de ', jam: 'Mermelada de ', soap: 'Jabón de ', agedwine: 'Vino añejo de ', mulledwine: 'Vino especiado de ',
+    agedcheese: 'Queso añejo de ', herbcheese: 'Queso a las hierbas de ', mushroomcheese: 'Queso con setas de ', yarn: 'Hilo de ' };
+  const PROC_ADJ = { dried: ' sec', smoked: ' ahumad', fermented: ' fermentad', pickled: ' encurtid' };
+  const PROC_RAW_ES = { 'Aurochs Milk': 'Leche de uro', 'Aurochs Fur': 'Pelaje de uro', 'Bison Fur': 'Pelaje de bisonte', 'Boar Fur': 'Pelaje de jabalí',
+    'Guanaco Fur': 'Pelaje de guanaco', 'Mouflon Wool': 'Lana de muflón', 'Dodo Egg': 'Huevo de dodo', 'Junglefowl Egg': 'Huevo de gallina de la jungla' };
+  const PROC_THROUGH = ['juice', 'wine', 'mead', 'beer'];
+  function procLabel(en) {
+    if (S.names === 'en') return en;
+    const e = PROC_OUT[en];
+    const known = e && /cheese$/.test(e[2]) ? null : translateItem(en);
+    if (known) return known;
+    if (PROC_RAW_ES[en]) return PROC_RAW_ES[en];
+    if (!e) return /Honey$/.test(en) && en !== 'Wild Honey' ? 'Miel de ' + lowerFirst(procLabel(en.replace(/ Honey$/, ''))) : en;
+    // El nombre sale del ingrediente de origen: «Vino especiado de remolacha», no «… de vino de zumo de remolacha»
+    let src = e[0];
+    while (PROC_OUT[src] && (PROC_THROUGH.includes(PROC_OUT[src][2]) || /^Fermented /.test(src) && e[2] === 'beer')) src = PROC_OUT[src][0];
+    if (/ Honey$/.test(src) && src !== 'Wild Honey') src = src.replace(/ Honey$/, '');
+    let x = procLabel(src);
+    if (/cheese$/.test(e[2])) x = x.replace(/^queso de /i, '').replace(/^leche de /i, '');
+    if (PROC_ADJ[e[2]]) return x + agree(PROC_ADJ[e[2]], x);
+    return (PROC_DE[e[2]] || '') + lowerFirst(x);
+  }
+  /* Todo lo que se puede sacar de un objeto, encadenando procesadores (zumo → vino → barril…) */
+  function procPaths(en) {
+    const out = [];
+    const walk = (node, steps) => {
+      (PROC_FROM[node] || []).forEach(e => {
+        if (steps.some(s => s[1] === e[1]) || steps.length >= 4) return;
+        const next = steps.concat([e]);
+        out.push(next);
+        walk(e[1], next);
+      });
+    };
+    walk(baseName(en), []);
+    return out;
+  }
+  function rawValueOf(en) {
+    const b = baseName(en);
+    const c = cropByEn[b]; if (c) return c.contrib[1];
+    const f = fishByName[b]; if (f) return f.contrib;
+    const g = GATHER.find(x => x.en === b) || TREES.find(x => x.en === b); if (g) return g.contrib;
+    return PROC_RAW[b] ?? null;
+  }
+  /* Recetas que lo usan, por nombre o por categoría («cualquier pescado», «cualquier verdura»…) */
+  function recipeCats(en) {
+    const b = baseName(en), cats = [];
+    const f = fishByName[b];
+    if (f) cats.push({ Pez: 'Any Fish', 'Cefalópodo': 'Any Cephalopod', 'Decápodo': 'Any Decapod' }[f.kind]);
+    const c = cropByEn[b];
+    if (c && c.type !== 'Seed') cats.push('Any ' + c.type);
+    if (/Mushroom$/.test(b)) cats.push('Any Mushroom');
+    if (/ Egg$/.test(b)) cats.push('Any Egg');
+    if (/^(Red|White) Meat$/.test(b)) cats.push('Any Meat');
+    return cats.filter(Boolean);
+  }
+  function recipesWith(en) {
+    const b = baseName(en), cats = recipeCats(b);
+    return RECIPES.filter(r => r.ing.some(([i]) => baseName(i) === b || cats.includes(i)));
+  }
+  function bestUseBlock(en) {
+    const b = baseName(en), raw = rawValueOf(b);
+    const paths = procPaths(b);
+    const recipes = recipesWith(b).filter(r => r.co > 1).sort((x, y) => y.co - x.co);
+    if (!paths.length && !recipes.length) return '';
+    const opts = paths.map(p => ({ steps: p, last: p[p.length - 1], v: p[p.length - 1][3] }));
+    // Para cada producto final, solo el camino más corto
+    const seen = new Set();
+    const known = opts.filter(o => o.v != null).sort((x, y) => y.v - x.v || x.steps.length - y.steps.length)
+      .filter(o => !seen.has(o.last[1]) && seen.add(o.last[1]));
+    const pending = opts.filter(o => o.v == null && !seen.has(o.last[1]));
+    const max = Math.max(raw || 0, known.length ? known[0].v : 0, recipes.length ? recipes[0].co : 0) || 1;
+    const fmt = v => (v == null ? 'pendiente' : fmtN(v));
+    const times = v => (raw && v ? (v / raw >= 1.95 ? `×${(Math.round(v / raw * 10) / 10).toString().replace('.', ',')}` : v > raw ? `+${fmtN(v - raw)}` : '') : '');
+    const machine = t => itemLabel(PROC_MACHINE[t]);
+    const extraOf = o => o.steps.map(s => s[4]).filter(Boolean).map(x => '+ ' + lowerFirst(itemLabel(x)));
+    const route = o => o.steps.map(s => esc(machine(s[2]))).join(' → ');
+    const bar = v => `<span class="bu-bar" aria-hidden="true"><span style="width:${Math.max(4, Math.round((v || 0) / max * 100))}%"></span></span>`;
+    const prodPic = o => pic(o.last[1] + '.png', ini(procLabel(o.last[1])), PROC_IMG[o.last[2]] ? PROC_IMG[o.last[2]] + '.png' : null);
+    const row = (img, title, sub, v, best) => `<li class="bu-row${best ? ' best' : ''}"><span class="gi">${img}</span><div class="main"><div class="bu-title">${title}</div>${sub ? `<div class="bu-sub">${sub}</div>` : ''}${bar(v)}</div><div class="side"><div class="num">${fmt(v)}</div>${times(v) ? `<div class="unit">${times(v)}</div>` : ''}</div></li>`;
+
+    const top = known[0], topRecipe = recipes[0];
+    let html = `<div class="section-head"><h2>¿Qué sale más a cuenta?</h2><span class="small muted">contribución</span></div><div class="card best-use">`;
+    if (top && (!raw || top.v > raw)) {
+      const extra = extraOf(top);
+      html += `<div class="bu-hero"><span class="gi">${prodPic(top)}</span><div class="main"><div class="k">Lo más rentable</div>
+        <div class="bu-name">${esc(procLabel(top.last[1]))}</div>
+        <div class="bu-sub">${route(top)}${extra.length ? ` · ${esc(extra.join(' '))}` : ''}</div></div>
+        <div class="side"><div class="num">${fmtN(top.v)}</div>${raw ? `<div class="unit">en crudo ${fmtN(raw)}</div>` : ''}</div></div>`;
+    } else if (raw != null) {
+      const noProc = paths.length ? 'Ningún procesador le saca más contribución' : 'No se procesa en ninguna máquina';
+      html += topRecipe && topRecipe.co > raw
+        ? `<p class="small" style="margin:0 0 6px"><strong>${noProc}.</strong> Lo que más da es cocinarlo: ${esc(itemLabel(topRecipe.en))} vale ${fmtN(topRecipe.co)}, aunque gasta más ingredientes.</p>`
+        : `<p class="small" style="margin:0 0 6px"><strong>Mejor entregarlo tal cual:</strong> ${lowerFirst(noProc)}.</p>`;
+    }
+    html += `<ol class="bu-list">`;
+    html += row(pic(itemIconFile(b), ini(itemLabel(b))), 'Tal cual (sin procesar)', '', raw, false);
+    known.slice(0, 8).forEach((o, i) => {
+      const extra = extraOf(o);
+      html += row(prodPic(o), esc(procLabel(o.last[1])), route(o) + (extra.length ? ` · ${esc(extra.join(' '))}` : ''), o.v, i === 0);
+    });
+    pending.forEach(o => { html += row(prodPic(o), esc(procLabel(o.last[1])), route(o), null, false); });
+    html += `</ol>`;
+    if (known.length > 8) html += `<p class="small muted" style="margin:6px 0 0">Y ${known.length - 8} productos más que valen menos.</p>`;
+    if (recipes.length) {
+      html += `<h3 class="bu-h3">Cocinándolo</h3><ol class="bu-list">${recipes.slice(0, 3).map(r => {
+        const total = r.ing.reduce((n, [, q]) => n + q, 0);
+        return `<li><a class="bu-row" href="#/receta/${r.id}"><span class="gi">${pic(r.en + '.png', ini(itemLabel(r.en)))}</span><div class="main"><div class="bu-title">${esc(itemLabel(r.en))}</div><div class="bu-sub">${total > 1 ? `${total} ingredientes en total` : 'solo este ingrediente'}${r.ut.length ? ' · ' + esc(r.ut.map(itemLabel).join(', ')) : ''}</div>${bar(r.co)}</div><div class="side"><div class="num">${fmtN(r.co)}</div><div class="unit">el plato</div></div></a></li>`;
+      }).join('')}</ol>`;
+    }
+    html += `<p class="small muted bu-note">Valores de la wiki en calidad base: con mejor calidad suben todos. Lo que va con «+» también se gasta. Los platos cuentan entero aunque lleven otros ingredientes${raw == null ? '. La contribución de este objeto en crudo aún no está en la wiki (pendiente)' : ''}.</p></div>`;
+    return html;
+  }
   function giftBlock(en, emptyMsg) {
     const loves = villagersFor(en, 'loves'), likes = villagersFor(en, 'likes'), hates = villagersFor(en, 'hates');
     let html = `<div class="section-head"><h2>¿A quién regalarlo?</h2></div><div class="card">`;
@@ -557,6 +684,7 @@
         <div class="wide"><div class="k">Semilla silvestre</div><div class="v">${esc(place(c.place))}</div></div>
       </div>
       <p class="small muted" style="margin:8px 2px 0">En Roots of Pacha no se vende: lo que se obtiene es contribución para el clan.</p>`;
+    html += bestUseBlock(c.en);
     html += giftBlock(c.en, 'Nadie tiene una opinión especial sobre este cultivo.');
     html += usesBlock(c.en);
     html += `<div class="section-head"><h2>Calculadora de siembra</h2></div><div class="card" id="calc"></div>`;
@@ -1116,6 +1244,7 @@
     else html += `<p class="small muted">Aún no tenemos más datos de este objeto en la guía (pendiente). Consulta la wiki si necesitas el detalle.</p>`;
     if (k === 'fish') html += `<label class="check card-check" style="margin-top:10px"><input type="checkbox" data-caught ${S.fish[d.id] ? 'checked' : ''}><span>Ya lo he capturado</span></label>`;
     html += matsList;
+    if (k !== 'category') html += bestUseBlock(it.en);
     html += giftBlock(it.en);
     html += usesBlock(it.en);
     view.innerHTML = html + footer();
