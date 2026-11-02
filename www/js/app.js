@@ -6,7 +6,7 @@
   const STORE_KEY = 'pacha-guia-v1';
   const defaults = {
     season: 0, day: 1, year: 1, names: 'es', theme: 'auto', images: true,
-    favs: [], prophecies: {}, fish: {}, gifts: {}, onboarded: false
+    favs: [], prophecies: {}, fish: {}, gifts: {}, cooked: {}, ideas: {}, onboarded: false
   };
   let S = load();
   function load() {
@@ -75,6 +75,8 @@
   /* Índices para referencias cruzadas */
   const cropByEn = Object.fromEntries(CROPS.map(c => [c.en, c]));
   const fishByName = Object.fromEntries(FISH.map(f => [f.name, f]));
+  const recipeByEn = Object.fromEntries(RECIPES.map(r => [r.en, r]));
+  const prophecyFile = p => p.name.replace(/\b\w/g, m => m.toUpperCase()).replace(' Of ', ' of ') + '.png';
   function villagersFor(en, kind) {
     return VILLAGERS.filter(v => v[kind].some(i => i === en || i === en + ' (W)' || i === en + ' (D)'));
   }
@@ -523,8 +525,13 @@
       ['#/pesca', `${caught}<small>/${FISH.length}</small>`, 'Pesca', 'Peces y animales acuáticos que llevas capturados', FISH.slice(0, 3).map(f => f.name + '.png')],
       ['#/animales', FARM_ANIMALS.length, 'Animales', 'Granja, doma, mascotas y cobertizos', FARM_ANIMALS.slice(0, 3).map(a => a.img)],
       ['#/recoleccion', TREES.length + GATHER.length, 'Recolección', 'Árboles, plantas silvestres, setas y medicinales', GATHER.slice(0, 3).map(g => g.en + '.png')],
-      ['#/profecias', `${metas}<small>/56</small>`, 'Profecías', 'Metas cumplidas de la pirámide de la Jungla', []],
-      ['#/festivales', FESTIVALS.length, 'Festivales', 'Eventos del año y carreras', []]
+      ['#/recetas', `${RECIPES.filter(r => S.cooked[r.id]).length}<small>/${RECIPES.length}</small>`, 'Recetas', 'Platos, ingredientes y utensilios de cocina', ['Pizza.png', 'Sushi.png', 'Flan.png']],
+      ['#/ideas', `${IDEAS.filter(i => S.ideas[i.en]).length}<small>/${IDEAS.length}</small>`, 'Ideas', 'Investigaciones: materiales, prosperidad y recompensas', ['Beekeeping.png', 'Well.png', 'Composting.png']],
+      ['#/minerales', MINERALS.length, 'Minerales', 'Recursos, minerales y gemas de las cuevas', ['Copper.png', 'Gold.png', 'Amethyst.png']],
+      ['#/herramientas', TOOLS.reduce((a, g) => a + g.items.length, 0), 'Herramientas', 'Mejoras, materiales y coste', ['Bronze Axe.png', 'Iron Hammer.png', 'Copper Watering Can.png']],
+      ['#/artesania', CRAFTING.reduce((a, g) => a + g.items.length, 0) + PROCESSORS.length, 'Artesanía', 'Fabricación, procesadores y fertilizantes', ['Brewer.png', 'Smoker.png', 'Stone Fence.png']],
+      ['#/profecias', `${metas}<small>/56</small>`, 'Profecías', 'Metas cumplidas de la pirámide de la Jungla', PROPHECIES.slice(0, 3).map(prophecyFile)],
+      ['#/festivales', FESTIVALS.length, 'Festivales', 'Eventos del año y carreras', FESTIVALS.slice(0, 3).map(f => f.en + '.png')]
     ];
     const small = [
       ['#/inicio', 'Primeros pasos', 'Día 1 y señales de humo'],
@@ -592,7 +599,7 @@
       ${PETS.map(p => `<tr><td><span style="display:inline-flex;align-items:center;gap:8px"><span class="gi lg">${pic(p.img, ini(p.name))}</span><strong>${esc(p.name)}</strong></span></td><td>${esc(place(p.place))}</td><td class="num">${p.pet}</td><td>${esc(p.ride)}</td></tr>`).join('')}
       </table></div></div>
       <div class="section-head"><h2>Cobertizos</h2></div><div class="list">
-      ${SHEDS.map(s => `<div class="row static"><div class="main"><div class="title">${esc(s.name)}</div><div class="meta" style="white-space:normal">${esc(s.cost)}${s.note ? ' · ' + esc(s.note) : ''}</div></div><div class="side"><div class="num">${s.cap}</div><div class="unit">animales</div></div></div>`).join('')}
+      ${SHEDS.map((s, k) => `<div class="row static"><div class="emoji-badge">${pic(['Small', 'Medium', 'Large'][k] + ' Animal Shed.png', ini(s.name))}</div><div class="main"><div class="title">${esc(s.name)}</div><div class="meta" style="white-space:normal">${esc(s.cost)}${s.note ? ' · ' + esc(s.note) : ''}</div></div><div class="side"><div class="num">${s.cap}</div><div class="unit">animales</div></div></div>`).join('')}
       </div>
       <div class="section-head"><h2>Consejos</h2></div><ul class="notes">${ANIMAL_TIPS.map(t => `<li>${esc(t)}</li>`).join('')}</ul>${footer()}`;
     view.innerHTML = html;
@@ -613,6 +620,7 @@
         if (!items.length) return;
         html += `<div class="section-head"><h2>${g}</h2></div><div class="list cols">${items.map(x => gatherRow(x)).join('')}</div>`;
       });
+      html += `<div class="section-head"><h2>Bichos</h2></div><p class="small muted">Se atrapan en los hábitats de bichos de las tierras Mograni y las Islas Yakuan, en cualquier estación.</p><div class="list cols">${BUGS.map(b => gatherRow({ en: b.en, name: itemLabel(b.en), place: b.place, seasons: SEASONS.map(x => x.id), contrib: b.co })).join('')}</div>`;
       $('#gList').innerHTML = html;
     };
     $$('[data-g=s] .chip', view).forEach(b => b.onclick = () => { st.s = b.dataset.v; $$('[data-g=s] .chip', view).forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
@@ -627,6 +635,189 @@
       <div class="side"><div class="num">${x.contrib}</div><div class="unit">contrib.</div></div></div>`;
   }
 
+  /* ——— Materiales e ingredientes (chip con imagen y cantidad) ——— */
+  function matChip(en, qty, cls) {
+    const label = itemLabel(en);
+    const base = en.replace(/ \((W|D)\)$/, '');
+    let href = null;
+    if (cropByEn[base]) href = '#/cultivo/' + cropByEn[base].id;
+    else if (fishByName[base]) href = '#/pesca?q=' + encodeURIComponent(base);
+    else if (recipeByEn[base]) href = '#/receta/' + recipeByEn[base].id;
+    const inner = `<span class="gi">${pic(itemIconFile(en), '')}</span>${esc(label)}${qty > 1 ? `<span class="qty">×${qty}</span>` : ''}`;
+    return href ? `<a class="gift ${cls || ''}" href="${href}">${inner}</a>` : `<span class="gift ${cls || ''}">${inner}</span>`;
+  }
+  const mats = (list, cls) => (list || []).map(([n, q]) => matChip(n, q, cls)).join('');
+  const nameOf = en => itemLabel(en);
+  const enSub = en => S.names === 'es' && itemLabel(en) !== en ? `<span class="en-sub">${esc(en)}</span>` : '';
+  const fmtN = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  function segChips(group, opts, cur) {
+    return `<div class="chips" data-g="${group}">${opts.map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div>`;
+  }
+  function bindChips(view, group, fn) {
+    $$(`[data-g=${group}] .chip`, view).forEach(b => b.onclick = () => {
+      $$(`[data-g=${group}] .chip`, view).forEach(x => x.setAttribute('aria-pressed', x === b)); fn(b.dataset.v);
+    });
+  }
+
+  /* ——— Recetas ——— */
+  route('/recetas', 'mas', (view, _, params) => {
+    setHeader('Recetas', `${RECIPES.length} platos`, { back: true });
+    const st = { q: params.get('q') || '', u: params.get('u') || 'all', hide: false };
+    const uts = [['all', 'Todas'], ['none', 'Sin utensilio'], ...UTENSILS.map(u => [u.en, nameOf(u.en)])];
+    view.innerHTML = `
+      <div class="search">${searchIco}<input type="search" placeholder="Plato o ingrediente…" value="${esc(st.q)}" aria-label="Buscar receta"></div>
+      ${segChips('u', uts, st.u)}
+      <div class="toolbar"><span class="count-badge" id="cooked"></span><label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="hideCooked"> Ocultar cocinadas</label></div>
+      <div class="list cols" id="recList"></div>
+      <div class="section-head"><h2>Utensilios de cocina</h2></div>
+      <div class="list cols">${UTENSILS.map(u => `<a class="row" href="#/recetas?u=${encodeURIComponent(u.en)}"><div class="emoji-badge">${pic(u.en + '.png', ini(nameOf(u.en)))}</div><div class="main"><div class="title">${esc(nameOf(u.en))}</div><div class="meta loves">${esc(u.unlock)}${u.cost ? ` · ${fmtN(u.cost)} contrib.` : ''}</div></div><div class="side"><div class="num">${RECIPES.filter(r => r.ut.includes(u.en)).length}</div><div class="unit">recetas</div></div></a>`).join('')}</div>
+      <div class="section-head"><h2>Consejos</h2></div><ul class="notes">${RECIPE_NOTES.map(n => `<li>${esc(n)}</li>`).join('')}</ul>${footer()}`;
+    const count = () => { $('#cooked').textContent = `${RECIPES.filter(r => S.cooked[r.id]).length}/${RECIPES.length} cocinadas`; };
+    const draw = () => {
+      const q = norm(st.q);
+      const list = RECIPES.filter(r => (st.u === 'all' || (st.u === 'none' ? !r.ut.length : r.ut.includes(st.u))) &&
+        (!q || norm(r.en).includes(q) || norm(nameOf(r.en)).includes(q) || r.ing.some(([i]) => norm(i).includes(q) || norm(itemLabel(i)).includes(q))) &&
+        !(st.hide && S.cooked[r.id]))
+        .sort((a, b) => nameOf(a.en).localeCompare(nameOf(b.en), 'es'));
+      count();
+      $('#recList').innerHTML = list.map(r => `
+        <a class="row top" href="#/receta/${r.id}">
+          <div class="emoji-badge">${pic(r.en + '.png', ini(nameOf(r.en)))}</div>
+          <div class="main"><div class="title">${esc(nameOf(r.en))}${S.cooked[r.id] ? '<span class="tick" aria-label="Cocinada">✓</span>' : ''}</div>
+            <div class="meta loves">${r.ing.map(([i, n]) => esc(itemLabel(i)) + (n > 1 ? ' ×' + n : '')).join(' · ')}</div>
+            <div class="meta">${r.ut.length ? esc(r.ut.map(nameOf).join(' o ')) : 'Sin utensilio'}</div></div>
+          <div class="side"><div class="num">${r.st}</div><div class="unit">energía</div></div></a>`).join('') || `<div class="empty">Ninguna receta con esos filtros.</div>`;
+    };
+    $('input[type=search]', view).oninput = e => { st.q = e.target.value; draw(); };
+    bindChips(view, 'u', v => { st.u = v; draw(); });
+    $('#hideCooked', view).onchange = e => { st.hide = e.target.checked; draw(); };
+    draw();
+  });
+
+  route('/receta/([\\w-]+)', 'mas', (view, [id]) => {
+    const r = RECIPES.find(x => x.id === id);
+    if (!r) return (location.hash = '#/recetas');
+    setHeader(nameOf(r.en), 'Receta', { back: true });
+    const loves = villagersFor(r.en, 'loves'), likes = villagersFor(r.en, 'likes'), hates = villagersFor(r.en, 'hates');
+    let html = `
+      <div class="detail-head"><div class="emoji-badge xl">${pic(r.en + '.png', ini(nameOf(r.en)))}</div>
+        <div><h2>${esc(nameOf(r.en))}</h2>${S.names === 'es' && nameOf(r.en) !== r.en ? `<div class="muted small">${esc(r.en)}</div>` : ''}</div></div>
+      <label class="check card-check"><input type="checkbox" data-cooked ${S.cooked[r.id] ? 'checked' : ''}><span>Ya la he cocinado</span></label>
+      <div class="section-head"><h2>Ingredientes</h2></div>
+      <div class="card"><div class="gift-group" style="margin-top:0">${mats(r.ing)}</div></div>
+      <div class="kv">
+        <div><div class="k">Utensilio</div><div class="v">${r.ut.length ? r.ut.map(u => `<span class="inline-pic"><span class="gi">${pic(u + '.png', '')}</span>${esc(nameOf(u))}</span>`).join(' o ') : 'Ninguno'}</div></div>
+        <div><div class="k">Cómo se consigue</div><div class="v">${esc(r.src)}</div></div>
+        <div><div class="k">Energía</div><div class="v">+${r.st}</div></div>
+        <div><div class="k">Contribución</div><div class="v">${r.co}</div></div>
+        ${r.b ? `<div style="grid-column:1/-1"><div class="k">Mejora temporal</div><div class="v">${esc(BONUS_ES[r.b[0]] || r.b[0])} +${r.b[1]}${r.b[2] > r.b[1] ? ` (hasta +${r.b[2]} con calidad óptima)` : ''}</div></div>` : ''}
+      </div>
+      <p class="small muted">Valores para calidad normal; suben con ingredientes de mejor calidad.</p>`;
+    if (loves.length || likes.length || hates.length) {
+      html += `<div class="section-head"><h2>¿A quién regalarlo?</h2></div><div class="card">`;
+      if (loves.length) html += `<div class="gift-group" style="margin-top:0"><h3><span class="dot" style="background:var(--love)"></span>Le encanta a</h3>${loves.map(v => vChip(v, 'love')).join('')}</div>`;
+      if (likes.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--like)"></span>Le gusta a</h3>${likes.map(v => vChip(v, 'like')).join('')}</div>`;
+      if (hates.length) html += `<div class="gift-group"><h3><span class="dot" style="background:var(--hate)"></span>Lo odia</h3>${hates.map(v => vChip(v, 'hate')).join('')}</div>`;
+      html += '</div>';
+    }
+    const usedIn = RECIPES.filter(x => x.ing.some(([i]) => i === r.en));
+    if (usedIn.length) html += `<div class="section-head"><h2>Se usa en</h2></div><div class="card"><div class="gift-group" style="margin-top:0">${usedIn.map(x => matChip(x.en, 1)).join('')}</div></div>`;
+    view.innerHTML = html + footer();
+    $('[data-cooked]', view).onchange = e => { S.cooked[r.id] = e.target.checked; save(); toast(e.target.checked ? 'Marcada como cocinada' : 'Desmarcada'); };
+  });
+
+  /* ——— Ideas ——— */
+  route('/ideas', 'mas', (view, _, params) => {
+    setHeader('Ideas', 'Investigaciones', { back: true });
+    const st = { f: params.get('f') || 'todas' };
+    const done = () => IDEAS.filter(i => S.ideas[i.en]).length;
+    view.innerHTML = `
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><strong id="ideaCount"></strong><span class="count-badge" id="ideaPct"></span></div>
+        <div class="progress"><span id="ideaBar" style="background:var(--moss)"></span></div>
+        <p class="small muted" style="margin:0">Las ideas aparecen cuando cumples su requisito y alcanzas la prosperidad indicada. Entrega los materiales al aldeano para completarla.</p></div>
+      ${segChips('f', [['todas', 'Todas'], ['pend', 'Pendientes'], ['hechas', 'Completadas']], st.f)}
+      <div class="list" id="ideaList"></div>${footer()}`;
+    const draw = () => {
+      const n = done();
+      $('#ideaCount').textContent = `${n} de ${IDEAS.length} ideas completadas`;
+      $('#ideaPct').textContent = Math.round(n / IDEAS.length * 100) + '%';
+      $('#ideaBar').style.width = (n / IDEAS.length * 100) + '%';
+      const list = IDEAS.filter(i => st.f === 'todas' || (st.f === 'hechas') === !!S.ideas[i.en]);
+      $('#ideaList').innerHTML = list.map(i => {
+        const v = VILLAGERS.find(x => x.name === i.who);
+        return `<div class="card idea${S.ideas[i.en] ? ' done' : ''}">
+          <div class="idea-head"><div class="emoji-badge big">${pic(i.img, ini(i.es))}</div>
+            <div class="main"><h3>${esc(S.names === 'en' ? i.en : i.es)}</h3>${S.names === 'es' ? `<div class="muted small">${esc(i.en)}</div>` : ''}
+              <div class="tags" style="margin-top:6px">${v ? vChip(v, '') : `<span class="tag">${esc(i.who)}</span>`}<span class="tag">${fmtN(i.pros)} prosperidad</span></div></div></div>
+          <div class="small" style="margin-top:8px"><strong>Aparece:</strong> ${esc(i.unlock)}</div>
+          <div class="gift-group"><h3>Materiales${i.matNote ? ` <span class="muted">(${esc(i.matNote)})</span>` : ''}</h3>${mats(i.mat)}</div>
+          <div class="small" style="margin-top:6px"><strong>Recompensa:</strong> ${esc(i.reward)}</div>
+          <label class="check"><input type="checkbox" data-idea="${esc(i.en)}" ${S.ideas[i.en] ? 'checked' : ''}><span>Completada</span></label></div>`;
+      }).join('') || `<div class="empty">Nada por aquí.</div>`;
+      $$('[data-idea]', view).forEach(cb => cb.onchange = () => { S.ideas[cb.dataset.idea] = cb.checked; save(); draw(); });
+    };
+    bindChips(view, 'f', v => { st.f = v; draw(); });
+    draw();
+  });
+
+  /* ——— Minerales ——— */
+  route('/minerales', 'mas', view => {
+    setHeader('Minerales', 'Recursos, minerales y gemas', { back: true });
+    let html = '';
+    ['Básicos', 'Minerales', 'Gemas'].forEach(g => {
+      html += `<div class="section-head"><h2>${g}</h2></div><div class="list cols">${MINERALS.filter(m => m.group === g).map(m => `
+        <div class="row static top"><div class="emoji-badge">${pic(m.en + '.png', ini(nameOf(m.en)))}</div>
+          <div class="main"><div class="title">${esc(nameOf(m.en))}</div>${enSub(m.en)}
+            <div class="meta loves">${esc(m.place)}</div>
+            <div class="meta"><span class="gi">${pic(m.tool + '.png', '')}</span>${esc(nameOf(m.tool))} o mejor</div></div>
+          <div class="side"><div class="num">${m.co}</div><div class="unit">contrib.</div></div></div>`).join('')}</div>`;
+    });
+    html += `<div class="section-head"><h2>Consejos</h2></div><ul class="notes">${MINERAL_NOTES.map(n => `<li>${esc(n)}</li>`).join('')}</ul>${footer()}`;
+    view.innerHTML = html;
+  });
+
+  /* ——— Herramientas ——— */
+  route('/herramientas', 'mas', view => {
+    setHeader('Herramientas', 'Mejoras y materiales', { back: true });
+    let html = '<p class="small muted">Las mejoras se hacen en el taller de herramientas (Acre y, más adelante, Ata) a cambio de materiales y contribución.</p>';
+    TOOLS.forEach(g => {
+      html += `<div class="section-head"><h2>${g.group}</h2></div><div class="list">${g.items.map(t => `
+        <div class="row static top"><div class="emoji-badge">${pic(t.en + '.png', ini(nameOf(t.en)))}</div>
+          <div class="main"><div class="title">${esc(nameOf(t.en))}</div>${enSub(t.en)}
+            <div class="meta loves">${esc(t.unlock)}</div>
+            ${t.mat ? `<div class="gift-group tight">${mats(t.mat)}</div>` : ''}</div>
+          ${t.cost ? `<div class="side"><div class="num">${fmtN(t.cost)}</div><div class="unit">contrib.</div></div>` : ''}</div>`).join('')}</div>`;
+    });
+    view.innerHTML = html + footer();
+  });
+
+  /* ——— Artesanía ——— */
+  route('/artesania', 'mas', (view, _, params) => {
+    setHeader('Artesanía', 'Fabricación y procesadores', { back: true });
+    const st = { t: params.get('t') || 'fab' };
+    view.innerHTML = `${segChips('t', [['fab', 'Fabricación'], ['proc', 'Procesadores'], ['fert', 'Fertilizantes']], st.t)}<div id="craftList"></div>${footer()}`;
+    const row = (t, extra, side) => `<div class="row static top"><div class="emoji-badge">${pic(t.en + '.png', ini(nameOf(t.en)))}</div>
+      <div class="main"><div class="title">${esc(nameOf(t.en))}</div>${enSub(t.en)}${extra}</div>${side || ''}</div>`;
+    const draw = () => {
+      let html = '';
+      if (st.t === 'fab') {
+        CRAFTING.forEach(g => {
+          html += `<div class="section-head"><h2>${g.group}</h2></div><div class="list cols">${g.items.map(t => row(t,
+            `${t.mat.length ? `<div class="gift-group tight">${mats(t.mat)}</div>` : ''}${t.note ? `<div class="meta loves">${esc(t.note)}</div>` : ''}${t.req ? `<div class="meta loves">Requiere: ${esc(t.req)}</div>` : ''}`)).join('')}</div>`;
+        });
+      } else if (st.t === 'proc') {
+        html += `<div class="list cols" style="margin-top:12px">${PROCESSORS.map(t => row(t,
+          `<div class="meta loves"><strong>Produce:</strong> ${esc(t.out)}${t.time ? ` · ${esc(t.time)}` : ''}${t.cap ? ` · capacidad ${t.cap}` : ''}</div>
+           ${t.mat.length ? `<div class="gift-group tight">${mats(t.mat)}</div>` : ''}<div class="meta loves">${esc(t.req)}</div>`)).join('')}</div>`;
+      } else {
+        html += `<p class="small muted">Se fabrican en el compostador. Los fertilizantes de calidad tardan más pero dan mejores cosechas.</p><div class="list cols">${FERTILIZERS.map(t => row(t, '', `<div class="side"><div class="num">${esc(t.time)}</div><div class="unit">en el compostador</div></div>`)).join('')}</div>`;
+      }
+      $('#craftList').innerHTML = html;
+    };
+    bindChips(view, 't', v => { st.t = v; draw(); });
+    draw();
+  });
+
   /* ——— Festivales ——— */
   route('/festivales', 'mas', view => {
     setHeader('Festivales', 'Eventos del año', { back: true });
@@ -636,12 +827,12 @@
       const s = seasonById(f.season);
       const n = daysUntil(seasonIdx(f.season), f.day);
       html += `<div class="card"><div class="tags" style="margin-bottom:6px"><span class="tag ${s.id}">${f.day} de ${s.name.toLowerCase()}</span><span class="tag">${untilText(n)}</span><span class="tag">${esc(place(f.place))}</span></div>
-        <h3>${esc(f.name)}</h3>${S.names === 'es' ? `<div class="muted small" style="margin-top:-4px;margin-bottom:6px">${esc(f.en)}</div>` : ''}
+        <div class="idea-head"><div class="emoji-badge">${pic(f.en + '.png', ini(f.name))}</div><div class="main"><h3 style="margin:0">${esc(f.name)}</h3>${S.names === 'es' ? `<div class="muted small" style="margin-bottom:6px">${esc(f.en)}</div>` : ''}</div></div>
         <p class="small" style="margin:0">${esc(f.desc)}</p>${f.req ? `<p class="small" style="margin:6px 0 0"><strong>Requisito:</strong> ${esc(f.req)}</p>` : ''}</div>`;
     });
     const race = FESTIVALS.find(f => f.season === 'all');
-    html += `<div class="card"><div class="tags" style="margin-bottom:6px"><span class="tag moss">Días 6 y 20 de cada estación</span></div><h3>${esc(race.name)}</h3><p class="small" style="margin:0">${esc(race.desc)}</p></div>`;
-    SPECIAL_EVENTS.forEach(e => { html += `<div class="card"><h3>${esc(e.name)}</h3><p class="small" style="margin:0">${esc(e.desc)}</p></div>`; });
+    html += `<div class="card"><div class="tags" style="margin-bottom:6px"><span class="tag moss">Días 6 y 20 de cada estación</span></div><div class="idea-head"><div class="emoji-badge">${pic(race.en + '.png', ini(race.name))}</div><div class="main"><h3 style="margin:0">${esc(race.name)}</h3></div></div><p class="small" style="margin:0">${esc(race.desc)}</p></div>`;
+    SPECIAL_EVENTS.forEach((e, k) => { html += `<div class="card"><div class="idea-head"><div class="emoji-badge">${pic(['Rite of Passage.png', 'Union.png'][k], ini(e.name))}</div><div class="main"><h3 style="margin:0">${esc(e.name)}</h3></div></div><p class="small" style="margin:0">${esc(e.desc)}</p></div>`; });
     html += `</div><div class="callout">A la mayoría de festivales se llega hablando con Jag en la hoguera antes de las 18:00.</div>${footer()}`;
     view.innerHTML = html;
   });
@@ -658,7 +849,7 @@
       </div><div class="section-head"><h2>Lista de profecías</h2></div>`;
     PROPHECIES.forEach((p, i) => {
       const n = p.reqs.filter((_, j) => S.prophecies[i + '-' + j]).length;
-      html += `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h3 style="margin:0">${esc(p.name)}</h3><span class="count-badge">${n}/4</span></div>
+      html += `<div class="card"><div class="idea-head"><div class="emoji-badge">${pic(prophecyFile(p), ini(p.name))}</div><div class="main"><h3 style="margin:0">${esc(p.name)}</h3></div><span class="count-badge">${n}/4</span></div>
         <div style="margin-top:6px">${p.reqs.map((r, j) => `<label class="check"><input type="checkbox" data-k="${i}-${j}" ${S.prophecies[i + '-' + j] ? 'checked' : ''}><span>${esc(r)}</span></label>`).join('')}</div>
         <div class="small" style="margin-top:6px"><strong>Recompensa:</strong> ${esc(p.reward)}</div></div>`;
     });
@@ -702,7 +893,7 @@
       <p class="small muted">Las traducciones son orientativas y pueden no coincidir con los nombres del juego en español. En modo español también verás el nombre original debajo.</p>
       <div class="section-head"><h2>Imágenes</h2></div>
       <div class="chips" data-g="images">${[[true, 'Mostrar imágenes de la wiki'], [false, 'Solo texto']].map(([v, l]) => `<button class="chip" data-v="${v}" aria-pressed="${S.images === v}">${l}</button>`).join('')}</div>
-      <p class="small muted">Las imágenes se descargan de la Roots of Pacha Wiki la primera vez que las ves (necesita internet) y luego quedan en caché. Sin conexión verás la inicial de cada nombre.</p>
+      <p class="small muted">Las imágenes son las de la Roots of Pacha Wiki y van incluidas en la app, así que funcionan sin conexión. Si eliges «Solo texto» verás la inicial de cada nombre.</p>
       <div class="section-head"><h2>Tus datos</h2></div>
       <div class="card"><p class="small">Todo se guarda solo en este dispositivo: día de la partida, favoritos, peces capturados, profecías y regalos.</p>
         <button class="btn ghost" data-reset style="width:100%">Borrar todos mis datos</button></div>${footer()}`;
@@ -724,18 +915,18 @@
     setHeader('Acerca de', 'Guía Pacha', { back: true });
     view.innerHTML = `
       <div class="card"><h3>Guía Pacha — guía no oficial</h3>
-        <p class="small">Una guía de bolsillo para <em>Roots of Pacha</em>: cultivos, aldeanos y sus regalos, calendario, festivales, pesca, animales y profecías. Funciona sin conexión.</p>
+        <p class="small">Una guía de bolsillo para <em>Roots of Pacha</em>: cultivos, aldeanos y sus regalos, calendario, recetas, ideas, minerales, herramientas, artesanía, festivales, pesca, animales y profecías. Funciona sin conexión.</p>
         <p class="small"><strong>Esta app no está afiliada, respaldada ni patrocinada por Soda Den ni por Crytivo.</strong> <em>Roots of Pacha</em> y sus nombres son marcas de sus respectivos propietarios.</p></div>
       <div class="card"><h3>Fuente de los datos</h3>
         <p class="small">Los datos proceden de la <strong>Official Roots of Pacha Wiki</strong> (rootsofpacha.wiki.gg), escrita por la comunidad y publicada bajo licencia <strong>CC BY-SA 4.0</strong>. Se han traducido y adaptado al español. Este contenido derivado se comparte bajo la misma licencia.</p>
-        <p class="small">Las imágenes se cargan directamente desde la wiki. Son ilustraciones del juego y pertenecen a sus autores (Soda Den); no forman parte de esta app.</p>
+        <p class="small">Las imágenes proceden de la wiki y son ilustraciones originales del juego. Pertenecen a sus autores (Soda Den); se incluyen solo para identificar cada objeto.</p>
         <p class="small muted">Si algo no cuadra con tu versión del juego, puede que la wiki haya cambiado: confírmalo allí.</p></div>
       <div class="card"><h3>Versión</h3><p class="small" style="margin:0">1.0.0 · Datos actualizados en noviembre de 2026</p></div>`;
   });
 
   /* ——— Buscador global ——— */
   function openSearch() {
-    $('#sheetContent').innerHTML = `<h2>Buscar</h2><div class="search">${searchIco}<input type="search" id="gq" placeholder="Aldeano, cultivo, pez, regalo…" aria-label="Buscar en toda la guía"></div><div id="gres"><p class="small muted">Prueba con «Touk», «calabaza», «Zeus» o «miel».</p></div>`;
+    $('#sheetContent').innerHTML = `<h2>Buscar</h2><div class="search">${searchIco}<input type="search" id="gq" placeholder="Aldeano, cultivo, receta, mineral…" aria-label="Buscar en toda la guía"></div><div id="gres"><p class="small muted">Prueba con «Touk», «calabaza», «pizza» o «cobre».</p></div>`;
     openSheet();
     const inp = $('#gq');
     setTimeout(() => inp.focus(), 60);
@@ -746,6 +937,11 @@
       const cs = CROPS.filter(c => norm(c.name).includes(q) || norm(c.en).includes(q)).slice(0, 6);
       const fs = FISH.filter(f => norm(f.name).includes(q)).slice(0, 6);
       const gs = [...TREES, ...GATHER].filter(g => norm(g.name).includes(q) || norm(g.en).includes(q)).slice(0, 6);
+      const hit = en => norm(en).includes(q) || norm(itemLabel(en)).includes(q);
+      const rs = RECIPES.filter(r => hit(r.en)).slice(0, 6);
+      const is = IDEAS.filter(i => norm(i.en).includes(q) || norm(i.es).includes(q)).slice(0, 4);
+      const os = [...TOOLS.flatMap(g => g.items.map(t => ['#/herramientas', t.en])), ...MINERALS.map(m => ['#/minerales', m.en]),
+        ...CRAFTING.flatMap(g => g.items.map(t => ['#/artesania', t.en])), ...PROCESSORS.map(t => ['#/artesania?t=proc', t.en])].filter(([, en]) => hit(en)).slice(0, 6);
       const items = new Map();
       VILLAGERS.forEach(v => v.loves.forEach(i => { if (norm(i).includes(q) || norm(itemLabel(i)).includes(q)) { if (!items.has(i)) items.set(i, []); items.get(i).push(v); } }));
       let html = '';
@@ -753,6 +949,10 @@
       if (cs.length) html += `<div class="result-group">Cultivos</div><div class="list">${cs.map(cropRow).join('')}</div>`;
       if (fs.length) html += `<div class="result-group">Pesca</div><div class="list">${fs.map(f => `<a class="row" href="#/pesca?q=${encodeURIComponent(f.name)}"><div class="emoji-badge">${fishPic(f)}</div><div class="main"><div class="title">${esc(f.name)}</div><div class="meta">${esc(place(f.place))} · ${esc(f.time)}</div></div>${chev}</a>`).join('')}</div>`;
       if (gs.length) html += `<div class="result-group">Recolección</div><div class="list">${gs.map(g => `<a class="row" href="#/recoleccion"><div class="emoji-badge">${pic(g.en + '.png', ini(g.name))}</div><div class="main"><div class="title">${esc(g.name)}</div><div class="meta">${esc(place(g.place))}</div></div>${chev}</a>`).join('')}</div>`;
+      const simple = (h, file, title, meta) => `<a class="row" href="${h}"><div class="emoji-badge">${pic(file, ini(title))}</div><div class="main"><div class="title">${esc(title)}</div><div class="meta">${esc(meta)}</div></div>${chev}</a>`;
+      if (rs.length) html += `<div class="result-group">Recetas</div><div class="list">${rs.map(r => simple('#/receta/' + r.id, r.en + '.png', itemLabel(r.en), r.ing.map(([i]) => itemLabel(i)).join(' · '))).join('')}</div>`;
+      if (is.length) html += `<div class="result-group">Ideas</div><div class="list">${is.map(i => simple('#/ideas', i.img, S.names === 'en' ? i.en : i.es, i.who + ' · ' + i.reward)).join('')}</div>`;
+      if (os.length) html += `<div class="result-group">Objetos</div><div class="list">${os.map(([h, en]) => simple(h, en + '.png', itemLabel(en), { '#/herramientas': 'Herramienta', '#/minerales': 'Mineral', '#/artesania': 'Artesanía', '#/artesania?t=proc': 'Procesador' }[h])).join('')}</div>`;
       if (items.size) {
         html += `<div class="result-group">Regalos favoritos</div><div class="card">`;
         [...items.entries()].slice(0, 6).forEach(([i, vlist]) => {

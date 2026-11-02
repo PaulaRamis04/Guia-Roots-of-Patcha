@@ -6,7 +6,10 @@ App Android (y web) con toda la información útil de *Roots of Pacha*, en espa�
 - **Calendario** de las 4 estaciones con cumpleaños, festivales y carreras.
 - **Cultivos** (49): estación, días de crecimiento, rebrote, dónde encontrar la semilla, contribución por calidad, calculadora de siembra y a quién regalarlo.
 - **Aldeanos** (58): cumpleaños, clan, romance, lo que les encanta, gusta y odian, buscador por regalo («¿a quién le gusta la calabaza?») y control de los 2 regalos semanales.
-- **Imágenes de la wiki** de aldeanos, cultivos, objetos de regalo, peces, plantas y animales. Se descargan de rootsofpacha.wiki.gg la primera vez (necesita internet) y quedan en caché; sin conexión se ven iconos. Se pueden desactivar en Ajustes.
+- **Recetas** (111): ingredientes, utensilio, energía, contribución, mejora temporal, cómo se consigue la receta, a quién regalar cada plato y lista de recetas cocinadas.
+- **Ideas** (39): qué aldeano la investiga, cuándo aparece, prosperidad, materiales y recompensa, con lista de completadas.
+- **Minerales** (recursos, minerales y las 7 gemas), **herramientas** (todas las mejoras con materiales y coste) y **artesanía** (vallas, suelos, riego, trampas, medicinas, 18 procesadores y fertilizantes). Los bichos están en Recolección.
+- **Imágenes reales de la wiki** (721) de aldeanos, cultivos, objetos, platos, peces, plantas, animales, herramientas, ideas, profecías y festivales. Van incluidas en `www/img/`, así que se ven sin conexión. Se pueden desactivar en Ajustes.
 - **Pesca** (52) con lista de capturados, **animales**, **recolección**, **festivales**, **profecías** con lista de tareas, **primeros pasos**, favoritos, modo oscuro y buscador global.
 
 ## Estructura
@@ -14,8 +17,11 @@ App Android (y web) con toda la información útil de *Roots of Pacha*, en espa�
 ```
 pacha-guia/
 ├── www/            ← la app (HTML, CSS y JS). Aquí se cambian los datos y el diseño.
-│   ├── js/data.js  ← todos los datos del juego
-│   └── js/images.js← de qué archivo de la wiki sale cada imagen
+│   ├── js/data.js       ← datos del juego (cultivos, aldeanos, pesca…)
+│   ├── js/data-extra.js ← recetas, ideas, minerales, herramientas, artesanía y bichos
+│   ├── js/images.js     ← de qué archivo de la wiki sale cada imagen
+│   ├── js/img-index.js  ← lista de imágenes incluidas en img/
+│   └── img/             ← imágenes descargadas de la wiki
 ├── android/        ← proyecto Android Studio (contenedor nativo que carga www/)
 └── play-store/     ← icono 512, gráfico destacado y capturas para la ficha
 ```
@@ -55,9 +61,9 @@ La carpeta `www/` se copia automáticamente dentro de la app cada vez que compil
 ### Sobre derechos y marcas (importante)
 
 - El icono de la app y el gráfico de la ficha son originales.
-- **Las imágenes de personajes, objetos y animales son del juego** y pertenecen a Soda Den. La app no las incluye: las carga de la wiki. Aun así, publicar en Play Store una app que las muestre sin permiso puede hacer que Google la retire por infringir propiedad intelectual. Opciones:
+- **Las imágenes de personajes, objetos y animales son del juego** y pertenecen a Soda Den. Ahora van **incluidas dentro de la app** (carpeta `www/img/`), descargadas de la wiki. Publicar en Play Store una app que las incluya sin permiso puede hacer que Google la retire por infringir propiedad intelectual. Opciones:
   1. **Pide permiso a Soda Den** (lo más seguro) y menciónalo en la descripción.
-  2. O publica con las imágenes desactivadas por defecto: en `www/js/app.js`, cambia `images: true` por `images: false` en `defaults`. Cada persona podrá activarlas en Ajustes.
+  2. O, antes de publicar, borra la carpeta `www/img/` y vacía la lista de `www/js/img-index.js`: la app volverá a cargar las imágenes de la wiki solo cuando haya internet. También puedes poner `images: false` en `defaults` (`www/js/app.js`) para que salgan desactivadas por defecto.
 - Para tu uso personal no hay ningún problema.
 - Deja siempre claro que es **no oficial** (ya aparece en la app, el icono de la ficha y «Acerca de»). Google Play rechaza apps que parezcan oficiales.
 - Los datos vienen de la **Roots of Pacha Wiki**, con licencia **CC BY-SA 4.0**: hay que citar la fuente (ya está en «Acerca de») y el contenido derivado debe compartirse con la misma licencia. No pongas la app de pago ni añadas restricciones a esos datos.
@@ -73,7 +79,9 @@ La carpeta `www/` se copia automáticamente dentro de la app cada vez que compil
 
 Todo está en `www/js/data.js`, en listas fáciles de leer. Por ejemplo, para cambiar un cultivo edita su línea en `CROPS_RAW`. Las traducciones de objetos están en `www/js/i18n.js`.
 
-Si alguna imagen no aparece, es que en la wiki el archivo tiene otro nombre. Búscalo en la wiki (página del objeto → clic en la imagen → nombre del archivo) y añádelo en `www/js/images.js`.
+Recetas, ideas, minerales, herramientas, artesanía y bichos están en `www/js/data-extra.js` (con sus traducciones al principio del archivo).
+
+Si alguna imagen no aparece, es que en la wiki el archivo tiene otro nombre. Búscalo en la wiki (página del objeto → clic en la imagen → nombre del archivo) y añádelo en `www/js/images.js`. Para que funcione sin conexión, descarga el archivo a `www/img/` (cambiando espacios y símbolos por `_`) y añade su nombre original a `www/js/img-index.js`.
 
 ## Créditos
 
