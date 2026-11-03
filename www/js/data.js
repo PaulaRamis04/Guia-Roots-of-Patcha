@@ -506,25 +506,25 @@ const JUNGLE_STAGES = [
 
 /* Animales */
 const FARM_ANIMALS = [
-  { name: 'Uro', en: 'Aurochs', img: 'Aurochs Brown.png', place: 'Savanna', produce: 'Leche (hembra) · Pelaje (macho)', ride: 4, tame: '4 días (3 si es joven)', note: 'Aparece en el año 2, tras la señal de Voda. Evoluciona a Vaca.' },
-  { name: 'Bisonte', en: 'Bison', img: 'Bison Brown.png', place: 'Savanna', produce: 'Pelaje', ride: 3, tame: '3–4 días (2–3 si es joven)' },
-  { name: 'Dodo', en: 'Dodo', img: 'Classical Dodo Icon.png', place: 'Mangrove Island', produce: 'Huevo · Pluma', ride: null, tame: '—' },
-  { name: 'Guanaco', en: 'Guanaco', img: 'Guanaco Orange.png', place: 'Savanna', produce: 'Pelaje', ride: 3, tame: '4 días (3 si es joven)', note: 'Evoluciona a Llama.' },
-  { name: 'Íbice', en: 'Ibex', img: 'Ibex Light Brown.png', place: 'Forest', produce: 'Leche · Cuernos', ride: null, tame: '—' },
-  { name: 'Gallina de la jungla', en: 'Junglefowl', img: 'Junglefowl Light Chocolate.png', place: 'Jungle', produce: 'Huevo · Pluma', ride: null, tame: '—', note: 'Aparece en la fase 4 de la Jungla. No se puede montar.' },
-  { name: 'Muflón', en: 'Mouflon', img: 'Mouflon Harp.png', place: 'Mogras Fire', produce: 'Lana', ride: null, tame: '—' },
-  { name: 'Avestruz', en: 'Ostrich', img: 'Ostrich Orange Earth.png', place: 'Savanna', produce: 'Huevo (hembra) · Pluma (macho)', ride: 3, tame: '3 días (2–3 si es joven)' },
-  { name: 'Caballo de estepa', en: 'Steppe Horse', img: 'Steppe Horse Dun.png', place: 'Caves', produce: 'Estiércol de caballo', ride: 3, tame: '3–4 días', note: 'Ofrece 1 alfalfa al tótem del caballo en las Cuevas para abrir su zona.' },
-  { name: 'Jabalí', en: 'Wild Boar', img: 'Wild Boar Brown.png', place: 'Forest', produce: 'Pelaje de jabalí', ride: 3, tame: '2 días', note: 'Evoluciona a Cerdo.' }
+  { id: 'uro', name: 'Uro', en: 'Aurochs', products: [['Aurochs Milk', 'f', 'Milker'], ['Aurochs Fur', 'm', 'Blade Shears']], img: 'Aurochs Brown.png', place: 'Savanna', produce: 'Leche (hembra) · Pelaje (macho)', ride: 4, tame: '4 días (3 si es joven)', note: 'Aparece en el año 2, tras la señal de Voda. Evoluciona a Vaca.' },
+  { id: 'bisonte', name: 'Bisonte', en: 'Bison', products: [['Bison Fur', null, 'Blade Shears']], img: 'Bison Brown.png', place: 'Savanna', produce: 'Pelaje', ride: 3, tame: '3–4 días (2–3 si es joven)' },
+  { id: 'dodo', name: 'Dodo', en: 'Dodo', products: [['Dodo Egg', 'f'], ['Dodo Feather', 'm']], img: 'Classical Dodo Icon.png', place: 'Mangrove Island', produce: 'Huevo (hembra) · Pluma (macho)', ride: 3, tame: '3 días (2 si es joven)' },
+  { id: 'guanaco', name: 'Guanaco', en: 'Guanaco', products: [['Guanaco Fur', null, 'Blade Shears']], img: 'Guanaco Orange.png', place: 'Savanna', produce: 'Pelaje', ride: 3, tame: '4 días (3 si es joven)', note: 'Evoluciona a Llama.' },
+  { id: 'ibice', name: 'Íbice', en: 'Ibex', products: [['Ibex Milk', 'f', 'Milker'], ['Horns', 'm']], img: 'Ibex Light Brown.png', place: 'Forest', produce: 'Leche (hembra) · Cuernos (macho)', ride: 3, tame: '2 días' },
+  { id: 'gallina-jungla', name: 'Gallina de la jungla', en: 'Junglefowl', products: [['Junglefowl Egg', 'f'], ['Junglefowl Feather', 'm']], img: 'Junglefowl Light Chocolate.png', place: 'Jungle', produce: 'Huevo (hembra) · Pluma (macho)', ride: null, tame: '3 días (2 si es joven)', note: 'Aparece en la fase 4 de la Jungla. No se puede montar.' },
+  { id: 'muflon', name: 'Muflón', en: 'Mouflon', products: [['Mouflon Wool', null, 'Blade Shears']], img: 'Mouflon Harp.png', place: 'Mogras Fire', produce: 'Lana', ride: 3, tame: '3 días (2 si es joven)' },
+  { id: 'avestruz', name: 'Avestruz', en: 'Ostrich', products: [['Ostrich Egg', 'f'], ['Ostrich Feather', 'm']], img: 'Ostrich Orange Earth.png', place: 'Savanna', produce: 'Huevo (hembra) · Pluma (macho)', ride: 3, tame: '3 días (2–3 si es joven)' },
+  { id: 'caballo', name: 'Caballo de estepa', en: 'Steppe Horse', products: [['Horse Manure']], img: 'Steppe Horse Dun.png', place: 'Caves', produce: 'Estiércol de caballo', ride: 3, tame: '3–4 días', note: 'Ofrece 1 alfalfa al tótem del caballo en las Cuevas para abrir su zona.' },
+  { id: 'jabali', name: 'Jabalí', en: 'Wild Boar', products: [['Boar Fur', null, 'Blade Shears']], img: 'Wild Boar Brown.png', place: 'Forest', produce: 'Pelaje de jabalí', ride: 3, tame: '2 días', note: 'Evoluciona a Cerdo.' }
 ];
 const PETS = [
-  { name: 'Conejo', en: 'Bunny', img: 'Bunny White.png', place: 'Forest', pet: 2, ride: 'No' },
-  { name: 'León de las cavernas', en: 'Cave Lion', img: 'Lion Yellow.png', place: 'Savanna', pet: 2, ride: 'Sí, de adulto (Baby Shroom)' },
-  { name: 'Mamut', en: 'Mammoth', img: 'Mammoth Rich Chocolate.png', place: 'Savanna', pet: 2, ride: 'Sí' },
-  { name: 'Panda', en: 'Panda', img: 'Panda Classical.png', place: 'Mountain Island', pet: 3, ride: 'Sí, de adulto (Baby Shroom)' },
-  { name: 'Sivaterio', en: 'Sivatherium', img: 'Sivatherium Sonnet.png', place: 'Mograni Plains', pet: 3, ride: 'Sí, de adulto (Baby Shroom)' },
-  { name: 'Araña', en: 'Spider', img: 'Spider Purple.png', place: 'Caves', pet: 4, ride: 'Sí' },
-  { name: 'Lobo', en: 'Wolf', img: 'Wolf Gray.png', place: 'Forest', pet: 3, ride: 'Sí, de adulto (Baby Shroom)' }
+  { id: 'conejo', name: 'Conejo', en: 'Bunny', img: 'Bunny White.png', place: 'Forest', pet: 2, ride: 'No' },
+  { id: 'leon', name: 'León de las cavernas', en: 'Cave Lion', img: 'Lion Yellow.png', place: 'Savanna', pet: 2, ride: 'Sí, de adulto (Baby Shroom)' },
+  { id: 'mamut', name: 'Mamut', en: 'Mammoth', img: 'Mammoth Rich Chocolate.png', place: 'Savanna', pet: 2, ride: 'Sí' },
+  { id: 'panda', name: 'Panda', en: 'Panda', img: 'Panda Classical.png', place: 'Mountain Island', pet: 3, ride: 'Sí, de adulto (Baby Shroom)' },
+  { id: 'sivaterio', name: 'Sivaterio', en: 'Sivatherium', img: 'Sivatherium Sonnet.png', place: 'Mograni Plains', pet: 3, ride: 'Sí, de adulto (Baby Shroom)' },
+  { id: 'arana', name: 'Araña', en: 'Spider', img: 'Spider Purple.png', place: 'Caves', pet: 4, ride: 'Sí' },
+  { id: 'lobo', name: 'Lobo', en: 'Wolf', img: 'Wolf Gray.png', place: 'Forest', pet: 3, ride: 'Sí, de adulto (Baby Shroom)' }
 ];
 const SHEDS = [
   { name: 'Cobertizo pequeño', cap: 4, cost: 'Madera 30 · Piedra 20 · 500 contribución', note: 'El primero es gratis al completar la idea de Doma (Croll).' },

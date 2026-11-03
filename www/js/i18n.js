@@ -10,7 +10,7 @@ const ITEM_ES = {
   'Tin': 'Estaño', 'Iron': 'Hierro', 'Silver': 'Plata', 'Gold': 'Oro', 'Coal': 'Carbón',
   'Amethyst': 'Amatista', 'Peridot': 'Peridoto', 'Sapphire': 'Zafiro', 'Agate': 'Ágata',
   'Beryl': 'Berilo', 'Jasper': 'Jaspe', 'Sardius': 'Sardio', 'Horns': 'Cuernos', 'Bones': 'Huesos',
-  'Ostrich Egg': 'Huevo de avestruz', 'Ostrich Feather': 'Pluma de avestruz',
+  'Ostrich Egg': 'Huevo de avestruz', 'Dodo Egg': 'Huevo de dodo', 'Dodo Feather': 'Pluma de dodo', 'Junglefowl Egg': 'Huevo de gallina de la jungla', 'Aurochs Milk': 'Leche de uro', 'Aurochs Fur': 'Pelaje de uro', 'Ostrich Feather': 'Pluma de avestruz',
   'Junglefowl Feather': 'Pluma de gallina de la jungla', 'Ibex Milk': 'Leche de íbice',
   'Ibex Milk Cheese': 'Queso de íbice', 'Aged Ibex Milk Cheese': 'Queso de íbice añejo',
   'Ibex Milk Herb Cheese': 'Queso de íbice a las hierbas', 'Mushroom Ibex Milk Cheese': 'Queso de íbice con setas',

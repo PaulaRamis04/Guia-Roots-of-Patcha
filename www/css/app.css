@@ -677,3 +677,10 @@ td { padding: 8px; background: radial-gradient(circle, var(--dots-color) 1.2px, 
 .target { animation: glow 1.6s ease 2; }
 @keyframes glow { 50% { box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-1); } }
 .date-pill:empty { visibility: hidden; }
+
+/* ——— Enlaces dentro de «¿Qué sale más a cuenta?» ——— */
+a.bu-hero { text-decoration: none; transition: filter var(--t-fast); }
+a.bu-hero:hover { filter: brightness(.97); }
+a.bu-hero:focus-visible, a.bu-row:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.bu-hero .chev { color: inherit; opacity: .7; }
+.bu-row .chev { width: 16px; height: 16px; margin-left: -4px; }

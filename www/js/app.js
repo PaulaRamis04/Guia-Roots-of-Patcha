@@ -107,7 +107,9 @@
 
   function itemLabel(en) {
     if (S.names === 'en') return en;
-    return translateItem(en) || en;
+    // Los productos procesados se nombran a partir de su ingrediente («Queso añejo de uro»)
+    if (typeof PROC_OUT !== 'undefined' && PROC_OUT[en]) return procLabel(en);
+    return translateItem(en) || (typeof PROC_RAW_ES !== 'undefined' && PROC_RAW_ES[en]) || en;
   }
   function seasonTags(ids) {
     if (ids.length === 4) return '<span class="tag moss">Todo el año</span>';
@@ -155,6 +157,8 @@
   PROCESSORS.forEach(p => addItem(p.en, 'proc', p));
   FERTILIZERS.forEach(f => addItem(f.en, 'fert', f));
   BUGS.forEach(b => addItem(b.en, 'bug', b));
+  FARM_ANIMALS.forEach(a => a.products.forEach(([en, sex, tool]) => addItem(en, 'animal', { animal: a, sex, tool })));
+  PROC_EDGES.forEach(e => addItem(e[1], 'product', { edge: e }));
   UTENSILS.forEach(u => addItem(u.en, 'utensil', u));
   VILLAGERS.forEach(v => [...v.loves, ...v.likes, ...v.hates].forEach(i => addItem(i, 'gift')));
   [RECIPES.flatMap(r => r.ing), IDEAS.flatMap(i => i.mat || []), TOOLS.flatMap(g => g.items.flatMap(t => t.mat || [])),
@@ -179,9 +183,10 @@
   }
 
   const KIND_ES = { crop: 'Cultivo', recipe: 'Receta', fish: 'Pesca', gather: 'Recolección', mineral: 'Mineral', tool: 'Herramienta', craft: 'Artesanía',
-    proc: 'Procesador', fert: 'Fertilizante', bug: 'Bicho', utensil: 'Utensilio', gift: 'Objeto', material: 'Material' };
+    proc: 'Procesador', fert: 'Fertilizante', bug: 'Bicho', utensil: 'Utensilio', gift: 'Objeto', material: 'Material',
+    animal: 'Producto animal', product: 'Producto elaborado' };
   function itemKind(it) {
-    for (const k of ['crop', 'recipe', 'fish', 'gather', 'mineral', 'tool', 'utensil', 'proc', 'craft', 'fert', 'bug']) if (it.kinds[k]) return k;
+    for (const k of ['crop', 'recipe', 'fish', 'animal', 'gather', 'mineral', 'tool', 'utensil', 'proc', 'craft', 'fert', 'bug', 'product']) if (it.kinds[k]) return k;
     return it.en.startsWith('Any ') ? 'category' : (it.kinds.gift || it.kinds.member ? 'gift' : 'material');
   }
   /* Adónde lleva tocar un objeto: su ficha propia si la tiene, si no la ficha general de objeto */
@@ -195,7 +200,7 @@
   function usesOf(en) {
     const b = baseName(en), has = list => (list || []).some(([i]) => baseName(i) === b);
     return [
-      ...RECIPES.filter(r => has(r.ing)).map(r => ({ en: r.en, href: '#/receta/' + r.id, kind: 'Receta' })),
+      ...recipesWith(b).map(r => ({ en: r.en, href: '#/receta/' + r.id, kind: 'Receta' })),
       ...IDEAS.filter(i => has(i.mat)).map(i => ({ en: i.en, label: S.names === 'en' ? i.en : i.es, img: i.img, href: '#/ideas?i=' + encodeURIComponent(i.en), kind: 'Idea' })),
       ...TOOLS.flatMap(g => g.items).filter(t => has(t.mat)).map(t => ({ en: t.en, href: itemHref(t.en), kind: 'Herramienta' })),
       ...CRAFTING.flatMap(g => g.items).filter(t => has(t.mat)).map(t => ({ en: t.en, href: itemHref(t.en), kind: 'Artesanía' })),
@@ -215,6 +220,14 @@
      procesándolo (y procesando el resultado) o cocinándolo. Datos: data-proc.js (wiki, calidad base). ——— */
   const PROC_FROM = {}, PROC_OUT = {};
   PROC_EDGES.forEach(e => { (PROC_FROM[e[0]] = PROC_FROM[e[0]] || []).push(e); PROC_OUT[e[1]] = e; });
+  /* La wiki mezcla «Grape» y «Grapes» (Grape Wine / Grapes Wine): se busca con las dos formas */
+  function procKey(en) {
+    const b = baseName(en);
+    if (PROC_OUT[b] || PROC_FROM[b]) return b;
+    const alt = /\bGrapes\b/.test(b) ? b.replace(/\bGrapes\b/, 'Grape') : b.replace(/\bGrape\b/, 'Grapes');
+    return PROC_OUT[alt] || PROC_FROM[alt] ? alt : b;
+  }
+  ITEMS.forEach(it => { const e = PROC_OUT[procKey(it.en)]; if (e && !it.kinds.product) it.kinds.product = { edge: e }; });
   const PROC_MACHINE = { juice: 'Press', oil: 'Press', milk: 'Press', gelatin: 'Press', flour: 'Mortar and Pestle', butter: 'Mortar and Pestle',
     mayo: 'Mortar and Pestle', lard: 'Mortar and Pestle', plantmeat: 'Mortar and Pestle', dried: 'Solar Dryer', smoked: 'Smoker',
     fermented: 'Fermenter', sourcream: 'Fermenter', cheese: 'Cheese Cloth', beer: 'Brewer', wine: 'Brewer', mead: 'Brewer',
@@ -229,6 +242,13 @@
     wine: 'Vino de ', mead: 'Hidromiel de ', jam: 'Mermelada de ', soap: 'Jabón de ', agedwine: 'Vino añejo de ', mulledwine: 'Vino especiado de ',
     agedcheese: 'Queso añejo de ', herbcheese: 'Queso a las hierbas de ', mushroomcheese: 'Queso con setas de ', yarn: 'Hilo de ' };
   const PROC_ADJ = { dried: ' sec', smoked: ' ahumad', fermented: ' fermentad', pickled: ' encurtid' };
+  /* Cómo sale un producto de su animal */
+  function animalHow(d) {
+    const who = d.sex === 'f' ? 'las hembras' : d.sex === 'm' ? 'los machos' : 'los ejemplares domados';
+    if (d.tool === 'Milker') return `Ordeñando a ${who} con la ${lowerFirst(itemLabel('Milker'))}`;
+    if (d.tool === 'Blade Shears') return `Esquilando a ${who} con las ${lowerFirst(itemLabel('Blade Shears'))}`;
+    return `Lo dejan ${who} en el cobertizo`;
+  }
   const PROC_RAW_ES = { 'Aurochs Milk': 'Leche de uro', 'Aurochs Fur': 'Pelaje de uro', 'Bison Fur': 'Pelaje de bisonte', 'Boar Fur': 'Pelaje de jabalí',
     'Guanaco Fur': 'Pelaje de guanaco', 'Mouflon Wool': 'Lana de muflón', 'Dodo Egg': 'Huevo de dodo', 'Junglefowl Egg': 'Huevo de gallina de la jungla' };
   const PROC_THROUGH = ['juice', 'wine', 'mead', 'beer'];
@@ -259,7 +279,7 @@
         walk(e[1], next);
       });
     };
-    walk(baseName(en), []);
+    walk(procKey(en), []);
     return out;
   }
   function rawValueOf(en) {
@@ -267,7 +287,9 @@
     const c = cropByEn[b]; if (c) return c.contrib[1];
     const f = fishByName[b]; if (f) return f.contrib;
     const g = GATHER.find(x => x.en === b) || TREES.find(x => x.en === b); if (g) return g.contrib;
-    return PROC_RAW[b] ?? null;
+    const k = procKey(b);
+    if (PROC_OUT[k]) return PROC_OUT[k][3];
+    return PROC_RAW[k] ?? null;
   }
   /* Recetas que lo usan, por nombre o por categoría («cualquier pescado», «cualquier verdura»…) */
   function recipeCats(en) {
@@ -279,6 +301,8 @@
     if (/Mushroom$/.test(b)) cats.push('Any Mushroom');
     if (/ Egg$/.test(b)) cats.push('Any Egg');
     if (/^(Red|White) Meat$/.test(b)) cats.push('Any Meat');
+    // Genéricos de la wiki («Cualquier queso», «Cualquier leche»…) en los que entra
+    groupsOf(b).forEach(g => { if (g !== 'Any Dishes' && !cats.includes(g)) cats.push(g); });
     return cats.filter(Boolean);
   }
   function recipesWith(en) {
@@ -304,16 +328,19 @@
     const route = o => o.steps.map(s => esc(machine(s[2]))).join(' → ');
     const bar = v => `<span class="bu-bar" aria-hidden="true"><span style="width:${Math.max(4, Math.round((v || 0) / max * 100))}%"></span></span>`;
     const prodPic = o => pic(o.last[1] + '.png', ini(procLabel(o.last[1])), PROC_IMG[o.last[2]] ? PROC_IMG[o.last[2]] + '.png' : null);
-    const row = (img, title, sub, v, best) => `<li class="bu-row${best ? ' best' : ''}"><span class="gi">${img}</span><div class="main"><div class="bu-title">${title}</div>${sub ? `<div class="bu-sub">${sub}</div>` : ''}${bar(v)}</div><div class="side"><div class="num">${fmt(v)}</div>${times(v) ? `<div class="unit">${times(v)}</div>` : ''}</div></li>`;
+    const row = (img, title, sub, v, best, href) => {
+      const inner = `<span class="gi">${img}</span><div class="main"><div class="bu-title">${title}</div>${sub ? `<div class="bu-sub">${sub}</div>` : ''}${bar(v)}</div><div class="side"><div class="num">${fmt(v)}</div>${times(v) ? `<div class="unit">${times(v)}</div>` : ''}</div>`;
+      return href ? `<li><a class="bu-row${best ? ' best' : ''}" href="${href}">${inner}${chev}</a></li>` : `<li class="bu-row${best ? ' best' : ''}">${inner}</li>`;
+    };
 
     const top = known[0], topRecipe = recipes[0];
     let html = `<div class="section-head"><h2>¿Qué sale más a cuenta?</h2><span class="small muted">contribución</span></div><div class="card best-use">`;
     if (top && (!raw || top.v > raw)) {
       const extra = extraOf(top);
-      html += `<div class="bu-hero"><span class="gi">${prodPic(top)}</span><div class="main"><div class="k">Lo más rentable</div>
+      html += `<a class="bu-hero" href="${itemHref(top.last[1])}" aria-label="Ver la ficha de ${esc(procLabel(top.last[1]))}"><span class="gi">${prodPic(top)}</span><div class="main"><div class="k">Lo más rentable</div>
         <div class="bu-name">${esc(procLabel(top.last[1]))}</div>
         <div class="bu-sub">${route(top)}${extra.length ? ` · ${esc(extra.join(' '))}` : ''}</div></div>
-        <div class="side"><div class="num">${fmtN(top.v)}</div>${raw ? `<div class="unit">en crudo ${fmtN(raw)}</div>` : ''}</div></div>`;
+        <div class="side"><div class="num">${fmtN(top.v)}</div>${raw ? `<div class="unit">${PROC_OUT[procKey(b)] ? 'tal cual' : 'en crudo'} ${fmtN(raw)}</div>` : ''}</div>${chev}</a>`;
     } else if (raw != null) {
       const noProc = paths.length ? 'Ningún procesador le saca más contribución' : 'No se procesa en ninguna máquina';
       html += topRecipe && topRecipe.co > raw
@@ -324,9 +351,9 @@
     html += row(pic(itemIconFile(b), ini(itemLabel(b))), 'Tal cual (sin procesar)', '', raw, false);
     known.slice(0, 8).forEach((o, i) => {
       const extra = extraOf(o);
-      html += row(prodPic(o), esc(procLabel(o.last[1])), route(o) + (extra.length ? ` · ${esc(extra.join(' '))}` : ''), o.v, i === 0);
+      html += row(prodPic(o), esc(procLabel(o.last[1])), route(o) + (extra.length ? ` · ${esc(extra.join(' '))}` : ''), o.v, i === 0, itemHref(o.last[1]));
     });
-    pending.forEach(o => { html += row(prodPic(o), esc(procLabel(o.last[1])), route(o), null, false); });
+    pending.forEach(o => { html += row(prodPic(o), esc(procLabel(o.last[1])), route(o), null, false, itemHref(o.last[1])); });
     html += `</ol>`;
     if (known.length > 8) html += `<p class="small muted" style="margin:6px 0 0">Y ${known.length - 8} productos más que valen menos.</p>`;
     if (recipes.length) {
@@ -335,7 +362,7 @@
         return `<li><a class="bu-row" href="#/receta/${r.id}"><span class="gi">${pic(r.en + '.png', ini(itemLabel(r.en)))}</span><div class="main"><div class="bu-title">${esc(itemLabel(r.en))}</div><div class="bu-sub">${total > 1 ? `${total} ingredientes en total` : 'solo este ingrediente'}${r.ut.length ? ' · ' + esc(r.ut.map(itemLabel).join(', ')) : ''}</div>${bar(r.co)}</div><div class="side"><div class="num">${fmtN(r.co)}</div><div class="unit">el plato</div></div></a></li>`;
       }).join('')}</ol>`;
     }
-    html += `<p class="small muted bu-note">Valores de la wiki en calidad base: con mejor calidad suben todos. Lo que va con «+» también se gasta. Los platos cuentan entero aunque lleven otros ingredientes${raw == null ? '. La contribución de este objeto en crudo aún no está en la wiki (pendiente)' : ''}.</p></div>`;
+    html += `<p class="small muted bu-note">Toca cualquier producto para ver su ficha: a quién le gusta y en qué recetas entra. Valores de la wiki en calidad base: con mejor calidad suben todos. Lo que va con «+» también se gasta. Los platos cuentan entero aunque lleven otros ingredientes${raw == null ? '. La contribución de este objeto en crudo aún no está en la wiki (pendiente)' : ''}.</p></div>`;
     return html;
   }
   /* Aldeanos con opinión sobre un objeto, también a través de sus genéricos («Cualquier miel») */
@@ -981,21 +1008,55 @@
     setHeader('Animales', 'Doma, granja y mascotas', { back: true });
     let html = `<div class="section-head"><h2>Animales de granja</h2></div><div class="list cols">`;
     FARM_ANIMALS.forEach(a => {
-      html += `<div class="card"><div style="display:flex;gap:12px;align-items:center;margin-bottom:4px"><div class="emoji-badge big">${pic(a.img, ini(a.name))}</div><h3 style="margin:0">${esc(a.name)} <span class="muted small">${S.names === 'es' ? esc(a.en) : ''}</span></h3></div>
-        <div class="tags" style="margin:6px 0 8px"><span class="tag">${esc(place(a.place))}</span>${a.ride ? `<span class="tag moss">Se monta con ${a.ride} corazones</span>` : ''}</div>
-        <div class="small"><strong>Produce:</strong> ${esc(a.produce)}</div>
-        ${a.tame !== '—' ? `<div class="small"><strong>Doma:</strong> ${esc(a.tame)} con la flauta</div>` : ''}
-        ${a.note ? `<div class="small muted" style="margin-top:4px">${esc(a.note)}</div>` : ''}</div>`;
+      html += `<a class="row top" href="#/animal/${a.id}"><div class="emoji-badge big">${pic(a.img, ini(a.name))}</div><div class="main">
+        <div class="title">${esc(a.name)}${S.names === 'es' ? ` <span class="muted small">${esc(a.en)}</span>` : ''}</div>
+        <div class="meta wrap">${esc(place(a.place))}${a.ride ? ` · se monta con ${a.ride} corazones` : ''}</div>
+        <div class="meta wrap">Produce: ${esc(a.products.map(([en]) => itemLabel(en)).join(', '))}</div></div>${chev}</a>`;
     });
-    html += `</div><div class="section-head"><h2>Mascotas</h2></div><div class="card"><div class="table-wrap"><table>
-      <tr><th scope="col">Animal</th><th scope="col">Dónde</th><th scope="col" class="num">Corazones para acariciar</th><th scope="col">Montar</th></tr>
-      ${PETS.map(p => `<tr><td><span style="display:inline-flex;align-items:center;gap:8px"><span class="gi lg">${pic(p.img, ini(p.name))}</span><strong>${esc(p.name)}</strong></span></td><td>${esc(place(p.place))}</td><td class="num">${p.pet}</td><td>${esc(p.ride)}</td></tr>`).join('')}
-      </table></div></div>
+    html += `</div><div class="section-head"><h2>Mascotas</h2></div><div class="list cols">
+      ${PETS.map(p => `<a class="row" href="#/animal/${p.id}"><div class="emoji-badge big">${pic(p.img, ini(p.name))}</div><div class="main"><div class="title">${esc(p.name)}</div><div class="meta wrap">${esc(place(p.place))} · se acaricia con ${p.pet} corazones</div></div>${chev}</a>`).join('')}
+      </div>
       <div class="section-head"><h2>Cobertizos</h2></div><div class="list">
       ${SHEDS.map((s, k) => `<div class="row static"><div class="emoji-badge">${pic(['Small', 'Medium', 'Large'][k] + ' Animal Shed.png', ini(s.name))}</div><div class="main"><div class="title">${esc(s.name)}</div><div class="meta wrap">${esc(s.cost)}${s.note ? ' · ' + esc(s.note) : ''}</div></div><div class="side"><div class="num">${s.cap}</div><div class="unit">animales</div></div></div>`).join('')}
       </div>
       <div class="section-head"><h2>Consejos</h2></div><ul class="notes">${ANIMAL_TIPS.map(t => `<li>${esc(t)}</li>`).join('')}</ul>${footer()}`;
     view.innerHTML = html;
+  });
+
+  /* ——— Ficha de animal: dónde está, cómo se doma y qué produce (cada producto lleva a su ficha) ——— */
+  route('/animal/([\\w-]+)', 'mas', (view, [id]) => {
+    const a = FARM_ANIMALS.find(x => x.id === id), p = a ? null : PETS.find(x => x.id === id);
+    const x = a || p;
+    if (!x) return notFound(view, 'ese animal', '#/animales', 'Ver los animales');
+    setHeader(x.name, a ? 'Animal de granja' : 'Mascota', { back: true });
+    const facts = [];
+    const fact = (k, v, wide) => facts.push(`<div${wide ? ' class="wide"' : ''}><div class="k">${k}</div><div class="v">${v}</div></div>`);
+    fact('Dónde', esc(place(x.place)));
+    if (a) {
+      fact('Montar', a.ride ? `Con <span class="big">${a.ride}</span> corazones` : 'No se puede montar');
+      if (a.tame !== '—') fact('Doma', `${esc(a.tame)} con la flauta`, true);
+    } else {
+      fact('Acariciar', `Con <span class="big">${p.pet}</span> corazones`);
+      fact('Montar', esc(p.ride), true);
+    }
+    let html = `<div class="detail-head"><div class="emoji-badge xl">${pic(x.img, ini(x.name))}</div>
+      <div><h2>${esc(x.name)}</h2>${S.names === 'es' ? `<div class="muted small">${esc(x.en)}</div>` : ''}
+        <div class="tags" style="margin-top:8px"><span class="tag">${a ? 'Granja' : 'Mascota'}</span>${a && a.ride ? '<span class="tag moss">Montura</span>' : ''}</div></div>
+      ${favBtn('animal:' + x.id, x.name)}</div>
+      <div class="kv essentials">${facts.join('')}</div>`;
+    if (a && a.note) html += `<p class="small muted">${esc(a.note)}</p>`;
+    if (a) {
+      html += `<div class="section-head"><h2>Qué produce</h2><span class="small muted">toca para ver su ficha</span></div><div class="list">`;
+      a.products.forEach(([en, sex, tool]) => {
+        const v = rawValueOf(en);
+        html += `<a class="row" href="${itemHref(en)}"><div class="emoji-badge">${pic(itemIconFile(en), ini(itemLabel(en)))}</div><div class="main">
+          <div class="title">${esc(itemLabel(en))}</div><div class="meta wrap">${esc(animalHow({ sex, tool }))}</div></div>
+          <div class="side"><div class="num">${v != null ? fmtN(v) : '—'}</div><div class="unit">contrib.</div></div>${chev}</a>`;
+      });
+      html += `</div><p class="small muted">Contribución en calidad base, según la wiki. Criar animales con mejores estadísticas sube la calidad.</p>`;
+    }
+    view.innerHTML = html + footer();
+    bindFav(view);
   });
 
   /* ——— Recolección ——— */
@@ -1263,7 +1324,18 @@
       fact('En el compostador', `<span class="big">${esc(d.time)}</span>`, true);
     } else if (k === 'bug') {
       fact('Dónde', esc(d.place)); fact('Contribución', `<span class="big">${d.co}</span>`);
+    } else if (k === 'animal') {
+      const a = d.animal, v = rawValueOf(it.en);
+      fact('Lo da', `<a class="inline-pic linkish" href="#/animal/${a.id}"><span class="gi">${pic(a.img, ini(a.name))}</span>${esc(a.name)}</a>`);
+      fact('Contribución', v != null ? `<span class="big">${fmtN(v)}</span>` : 'pendiente');
+      fact('Cómo se consigue', esc(animalHow(d)), true);
+    } else if (k === 'product') {
+      const e = d.edge;
+      fact('Contribución', e[3] != null ? `<span class="big">${fmtN(e[3])}</span>` : 'pendiente');
+      fact('Máquina', `<a class="inline-pic linkish" href="${itemHref(PROC_MACHINE[e[2]])}"><span class="gi">${pic(itemIconFile(PROC_MACHINE[e[2]]), '')}</span>${esc(itemLabel(PROC_MACHINE[e[2]]))}</a>`);
     }
+    // Cómo se hace un producto elaborado: de qué sale (con su ficha) y qué más gasta
+    const makeList = k === 'product' ? `<div class="section-head"><h2>Cómo se hace</h2></div><div class="card"><div class="gift-group">${giftChip(d.edge[0], '')}${d.edge[4] ? giftChip(d.edge[4], '') : ''}</div><p class="small muted" style="margin:8px 0 0">En ${esc(lowerFirst(itemLabel(PROC_MACHINE[d.edge[2]])))}${d.edge[4] ? `, gastando también ${esc(lowerFirst(itemLabel(d.edge[4])))}` : ''}. Toca el ingrediente para ver su ficha.</p></div>` : '';
     const matsList = (k === 'tool' || k === 'craft' || k === 'proc') && d.mat && d.mat.length ? `<div class="section-head"><h2>Materiales</h2></div><div class="card"><div class="gift-group">${mats(d.mat)}</div></div>` : '';
     let html = `
       <div class="detail-head"><div class="emoji-badge xl">${pic(itemIconFile(it.en), ini(label))}</div>
@@ -1280,7 +1352,7 @@
     }
     else if (!groupsOf(it.en).length) html += `<p class="small muted">Aún no tenemos más datos de este objeto en la guía (pendiente). Consulta la wiki si necesitas el detalle.</p>`;
     if (k === 'fish') html += `<label class="check card-check" style="margin-top:10px"><input type="checkbox" data-caught ${S.fish[d.id] ? 'checked' : ''}><span>Ya lo he capturado</span></label>`;
-    html += matsList;
+    html += matsList + makeList;
     if (k !== 'category') html += bestUseBlock(it.en);
     html += giftBlock(it.en);
     html += usesBlock(it.en);
@@ -1361,6 +1433,8 @@
     if (v.length) html += `<div class="section-head"><h2>Aldeanos</h2></div><div class="list">${v.map(vRow).join('')}</div>`;
     if (c.length) html += `<div class="section-head"><h2>Cultivos</h2></div><div class="list cols">${c.map(x => cropRow(x)).join('')}</div>`;
     if (r.length) html += `<div class="section-head"><h2>Recetas</h2></div><div class="list cols">${r.map(x => itemRow(x.en, '#/receta/' + x.id, S.cooked[x.id] ? 'Ya la has cocinado' : 'Aún sin cocinar')).join('')}</div>`;
+    const animals = [...FARM_ANIMALS, ...PETS].filter(x => isFav('animal:' + x.id));
+    if (animals.length) html += `<div class="section-head"><h2>Animales</h2></div><div class="list cols">${animals.map(x => `<a class="row" href="#/animal/${x.id}"><div class="emoji-badge">${pic(x.img, ini(x.name))}</div><div class="main"><div class="title">${esc(x.name)}</div><div class="meta">${esc(place(x.place))}</div></div>${chev}</a>`).join('')}</div>`;
     if (fish.length || items.length) html += `<div class="section-head"><h2>Objetos</h2></div><div class="list cols">${fish.map(x => itemRow(x.name, itemHref(x.name), S.fish[x.id] ? 'Capturado' : 'Aún sin capturar')).join('')}${items.map(x => itemRow(x.en, itemHref(x.en), KIND_ES[itemKind(x)] || 'Objeto')).join('')}</div>`;
     if (!html) html = emptyState('hand', 'Aquí guardarás lo tuyo', 'Toca la estrella en cualquier ficha (aldeano, cultivo, receta u objeto) y el corazón en quien estés cortejando para tenerlo todo a mano.');
     const caught = Object.values(S.fish).filter(Boolean).length, cooked = RECIPES.filter(x => S.cooked[x.id]).length, ideas = IDEAS.filter(i => S.ideas[i.en]).length;
@@ -1439,7 +1513,7 @@
     });
     IDEAS.forEach(i => add('Idea', [{ t: i.es }, { t: i.en, w: .95 }], '#/ideas?i=' + encodeURIComponent(i.en), i.img, ini(i.es), `${i.who} · ${i.reward}`, .97));
     FESTIVALS.forEach(f => add('Festival', [{ t: f.name }, { t: f.en, w: .95 }], '#/festivales', f.en + '.png', ini(f.name), f.season === 'all' ? 'Días 6 y 20 de cada estación' : `${f.day} de ${seasonById(f.season).name.toLowerCase()}`, .97));
-    [...FARM_ANIMALS, ...PETS].forEach(a => add('Animal', [{ t: a.name }, { t: a.en, w: .95 }], '#/animales', a.img, ini(a.name), place(a.place), .95));
+    [...FARM_ANIMALS, ...PETS].forEach(a => add('Animal', [{ t: a.name }, { t: a.en, w: .95 }], '#/animal/' + a.id, a.img, ini(a.name), place(a.place), .95));
     PROPHECIES.forEach(p => add('Profecía', [{ t: p.name }], '#/profecias', prophecyFile(p), ini(p.name), p.reward, .9));
     [['Calendario', '#/calendario', 'cumpleaños festivales'], ['Pesca', '#/pesca', 'peces capturados'], ['Recolección', '#/recoleccion', 'setas plantas árboles'],
       ['Recetas', '#/recetas', 'cocina platos'], ['Ideas', '#/ideas', 'investigaciones'], ['Minerales', '#/minerales', 'gemas'], ['Herramientas', '#/herramientas', 'mejoras'],
@@ -1571,7 +1645,7 @@
   $('#datePill').onclick = openDatePicker;
   $('#searchBtn').onclick = openSearch;
   /* «Volver»: si se entró directamente a una ficha (sin historial), sube a su lista en vez de salir */
-  const PARENT = { cultivo: '#/cultivos', aldeano: '#/aldeanos', receta: '#/recetas', objeto: '#/mas' };
+  const PARENT = { cultivo: '#/cultivos', aldeano: '#/aldeanos', receta: '#/recetas', objeto: '#/mas', animal: '#/animales' };
   let navCount = 0;
   window.addEventListener('hashchange', () => { navCount++; });
   $('#backBtn').onclick = () => {
